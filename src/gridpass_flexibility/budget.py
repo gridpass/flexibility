@@ -32,7 +32,7 @@ def check_budget(operation, payload):
         alternatives=payload["alternatives"]; sensitivities=payload.get("sensitivities",[])
         if not 1<=len(alternatives)<=8 or len(sensitivities)>8:raise ValueError("Agent economics case limit exceeded")
         if payload.get("time_limit_s",60)>60:raise ValueError("Agent economics time limit is 60 seconds")
-        work=sum(effort(a["scenario"]) for a in alternatives)*(1+len(sensitivities))
+        work=sum(effort(a["scenario"])*(2 if a.get("seasonal_commissioning") is True else 1) for a in alternatives)*(1+len(sensitivities))
     elif operation == "causal":
         s=payload["scenario"];steps=len(s["baseline_mw"]);width=payload.get("lookahead_intervals",24)
         if type(width) is not int or not 1<=width<=96 or steps>96:

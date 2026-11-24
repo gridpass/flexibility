@@ -82,6 +82,36 @@ class EconomicsTests(unittest.TestCase):
         self.assertAlmostEqual(r["finance"]["npv_eur"],-100000+(995000-expected)/1.1+(1990000-expected-181*24*100-12000)/1.21)
         self.assertEqual(evaluate_request("economics",request(a)),compare_lifecycle(request(a)))
 
+    def test_commissioning_cannot_borrow_pre_service_charge(self):
+        a=alternative(delay_months=6,seasonal_commissioning=True,
+                      tariff={"grid_emissions_kg_mwh":0,"monthly_peak_eur_mw":[0]*12})
+        a["scenario"]["events"]=[{"start":181,"end":182,"cap_mw":0,"notice_minutes":1440}]
+        a["scenario"]["resources"]=[{"id":"b","kind":"battery","power_mw":1,
+             "energy_mwh":24,"initial_mwh":0,"terminal_mwh":0,
+             "charge_efficiency":1,"discharge_efficiency":1}]
+        result=compare_lifecycle(request(a))
+        row=result["cases"][0]["alternatives"][0]
+        self.assertTrue(row["annual"]["feasible"])
+        self.assertFalse(row["commissioning"]["feasible"])
+        self.assertAlmostEqual(row["commissioning"]["uncovered_mwh"],24)
+        self.assertEqual(row["commissioning"]["first_service_month"],7)
+        self.assertFalse(row["eligible"])
+        self.assertIsNone(result["cases"][0]["recommended"])
+
+    def test_commissioning_slice_clips_events_and_notice(self):
+        from gridpass_flexibility.economics import _commissioning_slice
+        s={"baseline_mw":[1,2,3,4],"interval_hours":1,
+           "events":[{"start":0,"end":3,"cap_mw":1,"notice_minutes":120},
+                     {"start":3,"end":4,"cap_mw":2,"notice_minutes":120}],
+           "resources":[{"availability":[1,.5,0,1],"ambient_c":[10,11,12,13]}]}
+        sliced=_commissioning_slice(s,2,1)
+        self.assertEqual(sliced["baseline_mw"],[3,4])
+        self.assertEqual(sliced["resources"][0]["availability"],[0,1])
+        self.assertEqual(sliced["resources"][0]["ambient_c"],[12,13])
+        self.assertEqual(sliced["events"],[
+            {"start":0,"end":1,"cap_mw":1,"notice_minutes":0},
+            {"start":1,"end":2,"cap_mw":2,"notice_minutes":60}])
+
     def test_seasonal_commissioning_reconciles_generator_cost(self):
         a=alternative(delay_months=12,seasonal_commissioning=True,
                       tariff={"grid_emissions_kg_mwh":0,"carbon_eur_tonne":50,"monthly_peak_eur_mw":[0]*12})
