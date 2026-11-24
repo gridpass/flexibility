@@ -1,0 +1,83 @@
+{
+  "censored_steps": 0,
+  "command_latency_measured": false,
+  "facility_control_validated": false,
+  "license": "CC-BY-4.0",
+  "samples": 3322,
+  "sha256": "a80774e59e046a10857bf34b01a123931e231fcc2bc440480e270304d300a96a",
+  "source_doi": "10.5281/zenodo.23074732",
+  "steps": [
+    {
+      "cap_w": 150.0,
+      "gpu": "NVIDIA A10G",
+      "observed_settling_ms": 242.0,
+      "observed_window_ms": 5044.0,
+      "previous_tail_iteration_ms": 18.732,
+      "previous_tail_power_w": 216.6,
+      "tail_iteration_ms": 19.252000000000002,
+      "tail_power_w": 149.6,
+      "tolerance_w": 3.0,
+      "workload": "llm_decode"
+    },
+    {
+      "cap_w": 105.0,
+      "gpu": "NVIDIA A10G",
+      "observed_settling_ms": 1125.0,
+      "observed_window_ms": 5066.0,
+      "previous_tail_iteration_ms": 18.731,
+      "previous_tail_power_w": 220.5,
+      "tail_iteration_ms": 29.673,
+      "tail_power_w": 104.9,
+      "tolerance_w": 2.1,
+      "workload": "llm_decode"
+    },
+    {
+      "cap_w": 195.0,
+      "gpu": "NVIDIA A10G",
+      "observed_settling_ms": 101.0,
+      "observed_window_ms": 5024.0,
+      "previous_tail_iteration_ms": 18.738,
+      "previous_tail_power_w": 220.95,
+      "tail_iteration_ms": 18.820500000000003,
+      "tail_power_w": 194.6,
+      "tolerance_w": 3.9,
+      "workload": "llm_decode"
+    },
+    {
+      "cap_w": 150.0,
+      "gpu": "NVIDIA A10G",
+      "observed_settling_ms": 201.0,
+      "observed_window_ms": 5025.0,
+      "previous_tail_iteration_ms": 17.09,
+      "previous_tail_power_w": 199.6,
+      "tail_iteration_ms": 18.302999999999997,
+      "tail_power_w": 150.0,
+      "tolerance_w": 3.0,
+      "workload": "resnet50"
+    },
+    {
+      "cap_w": 105.0,
+      "gpu": "NVIDIA A10G",
+      "observed_settling_ms": 1893.0,
+      "observed_window_ms": 5013.0,
+      "previous_tail_iteration_ms": 17.088,
+      "previous_tail_power_w": 201.55,
+      "tail_iteration_ms": 21.927,
+      "tail_power_w": 105.8,
+      "tolerance_w": 2.1,
+      "workload": "resnet50"
+    },
+    {
+      "cap_w": 195.0,
+      "gpu": "NVIDIA A10G",
+      "observed_settling_ms": 221.0,
+      "observed_window_ms": 5026.0,
+      "previous_tail_iteration_ms": 17.086,
+      "previous_tail_power_w": 205.6,
+      "tail_iteration_ms": 17.265,
+      "tail_power_w": 194.4,
+      "tolerance_w": 3.9,
+      "workload": "resnet50"
+    }
+  ]
+}

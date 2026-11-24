@@ -101,6 +101,10 @@ Goal: an independently usable open-source large-load flexibility assessment work
 
 - Repeated annual schedules and commissioning-to-full-year transitions require matching storage energy, thermal state, generator output and commitment/dwell, and zero workload backlog at the declared state boundary. A mismatch blocks eligibility and a complete recommendation when the traces are otherwise feasible; no free state reset is assumed. Fuel is explicitly assumed replenished. A synthetic last-day restriction depletes 24 MWh from an initially full battery and blocks a multi-year recommendation despite a feasible single-year schedule. A restored battery passes. Generator dwell, thermal and backlog mismatches are independently tested. No claim of continuous multiyear reoptimization or site validation.
 
+## Verified GPU workload actuation benchmark
+
+- Pinned CC BY 4.0 ELF trace: 3,322 samples, six downward A10G cap steps across two workloads. Observed post-cap-label settling ranges from 101 to 1,893 ms, with final-window iteration latency reported and incomplete steps censored. Regression tests reject nonmonotonic/gapped and nonfinite measurements. See [benchmark](MEASURED.md). Command invocation latency, facility power, workload SLA and site response remain external evidence; no engine defaults changed.
+
 ## Remaining release gates
 
 | Gate | Acceptance evidence |
