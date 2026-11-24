@@ -21,3 +21,4 @@ jobs:
       - run: gridpass-flexibility --stress examples/annual-stress.json
       - run: gridpass-flexibility --causal examples/causal-replay.json
       - run: python -m gridpass_flexibility.guard_demo examples/guard-site.json > guard-trace.json
+      - run: gridpass-flexibility --economics examples/lifecycle-economics.json

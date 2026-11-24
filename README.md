@@ -91,3 +91,7 @@ Use the [free hosted calculator](https://gridpass.co/tools/flexibility-assessmen
 ## Licence
 
 Apache-2.0 for the original GridPass source in this repository. Third-party publications, brands and datasets retain their respective rights. No EPRI code, restricted material or private customer data is included.
+
+## Lifecycle economics
+
+Compare full-year connection alternatives using the same dispatch model, real-EUR cashflows, capital and fixed costs, fuel, carbon, peak tariff and connection delays. Run `gridpass-flexibility --economics examples/lifecycle-economics.json` or use the generic MCP operation `economics`. See [assumptions and inputs](docs/ECONOMICS.md).

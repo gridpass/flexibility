@@ -45,6 +45,13 @@ Goal: an independently usable open-source large-load flexibility assessment work
 - Closed-form heat-balance, variable inputs, baseline/cost accounting, surprise event, thermal failure, recovery, protected-load and renewable-curtailment tests pass. Installed-package MCP numerical parity includes the new thermal example. 89 tests passed locally.
 - [Thermal resource specification](THERMAL.md) records measured-data candidate licences and boundaries. No measured parameter fit or field-validation claim is made.
 
+## Verified in v0.3.5 (lifecycle economics)
+
+- Shared dispatch includes peak-import fee in the optimization objective; fuel efficiency, fuel cost, carbon and nonfuel costs use explicit factors. Independent component reconciliation checks reported annual costs.
+- Complete operating-year comparisons use a common real-EUR discounted cashflow horizon with capex, fixed O&M, replacements, residual value, and explicit connection delays. Infeasible/non-operating alternatives are not ranked; incomplete solver comparisons cannot recommend a winner.
+- Closed-form annual cost, fuel/emissions, NPV, time-to-power, reserve of feasible alternatives, peak-aware dispatch and reoptimized sensitivity tests exercise the shared CLI/MCP operation. See [economics specification](ECONOMICS.md).
+- Monthly tariff schedules, seasonal commissioning, site-calibrated assumptions and causal/field validation remain outside this release.
+
 ## Remaining release gates
 
 | Gate | Acceptance evidence |
@@ -52,7 +59,7 @@ Goal: an independently usable open-source large-load flexibility assessment work
 | Profile interoperability | Independent schema and conformance tests now implemented; obtain authoritative EPRI class semantics and operator-specific rules before any formal mapping |
 | Operational feasibility | Sampled causal replay, discrete dispatch, forced-trip/restart and state carryover implemented; remaining fallback control, calibrated plant response, finer response checks and independent field validation |
 | Resource models | Temperature-constrained cooling, protected loads and renewable curtailment implemented; remaining calibrated thermal and workload parameters and real measured traces with clear reuse permissions |
-| Economics | Consistent horizon, capital and fixed costs, fuel, maintenance, tariffs, emissions, connection-delay value and sensitivity; independently check numerical examples |
+| Economics | Common real-EUR NPV, investment/fixed costs, replacement, fuel, emissions, single annual peak tariff, connection-delay value and reoptimized sensitivity implemented and analytically checked; remaining real-site assumptions, finer tariff/seasonal resolution, causal evidence |
 | Validation | Closed-form and synthetic full-year 15-minute cases implemented; a small exhaustive commitment cost cross-check is implemented; sampled failure injection and prefix invariance now tested; remaining real trace replay, finer numerical tolerance and repeatable benchmark artifacts |
 | Hosted parity | Public website and existing MCP use this canonical engine, provide a simple entry point plus advanced operations; authenticated or resource-bounded optimization; live endpoint tests, no customer data leakage |
 | Usability | Documented examples, versioned request/response schema, clear error states, inspectable schedules, exportable results and limitations |
