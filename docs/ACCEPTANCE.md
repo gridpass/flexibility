@@ -81,6 +81,10 @@ Goal: an independently usable open-source large-load flexibility assessment work
 
 - UCI CC BY 4.0 steel industry archive checksum pinned; all 35,040 ordered 15-minute kWh intervals validated (959.63671 MWh, peak interval-average 0.62872 MW). Canonical dispatch replays 8,064 measured intervals across twelve fixed seven-day windows, with independent energy, gap, SOC, efficiency, equipment bound and terminal checks. Hypothetical 0.3 MW / 0.6 MWh battery reduces uncovered energy from 24.57368 to 1.329863 MWh and passes only three windows. See [measured benchmark](MEASURED.md). No raw data committed; no actual flexibility response or thermal parameter fit claimed.
 
+## Verified conditional cooling equipment benchmark
+
+- A checksum-pinned CC BY 4.0 Athens pilot workbook supplies one-minute measured water-loop temperatures, flows and total heat-pump electrical input. A chronological 12/12 complete-cycle split estimates conditional COP 3.758 and 1.515% aggregate absolute held-out cycle-energy error. Workbook cold/hot port naming is inconsistent with thermodynamic roles; same-prefix flow pairing remains a hypothesis, and maximum energy-balance residual is 18.44% of electrical input. See [benchmark and limitations](MEASURED.md). No calibrated zone model, confirmed sensor mapping, field acceptance or default COP is claimed.
+
 ## Remaining release gates
 
 | Gate | Acceptance evidence |
