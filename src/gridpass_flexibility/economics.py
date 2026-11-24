@@ -24,9 +24,14 @@ def _id(v):
         raise ValueError("IDs must be nonempty strings up to 100 characters")
     return v
 
-def _cashflows(annual, a, years, discount, capex_factor, extra_delay):
+def _cashflows(annual, a, years, discount, capex_factor, extra_delay, monthly_costs=None):
     capex=_number(a["capex_eur"],"initial capital expenditure",0,1e12)*capex_factor
     delay=_number(a["delay_months"],"connection delay",0,1200)+extra_delay
+    seasonal=a.get("seasonal_commissioning",False)
+    if type(seasonal) is not bool:
+        raise ValueError("seasonal_commissioning must be boolean")
+    if seasonal and (not float(delay).is_integer() or "monthly_peak_eur_mw" not in a["tariff"]):
+        raise ValueError("Seasonal commissioning requires whole-month delay and monthly peak tariffs")
     margin=_number(a["annual_contribution_eur"],"annual contribution before modeled costs",-1e12,1e12)
     fixed=_number(a["annual_fixed_opex_eur"],"annual fixed operating cost",0,1e12)
     salvage=_number(a.get("residual_value_eur",0),"residual value",0,1e12)*capex_factor
@@ -45,10 +50,14 @@ def _cashflows(annual, a, years, discount, capex_factor, extra_delay):
         fraction=max(0,min(1,(y*12-delay)/12))
         # Residual value is explicitly assumed realizable, even if the project is delayed.
         terminal=salvage if y==years else 0
-        net=fraction*(margin-fixed-annual)-replacement.get(y,0)+terminal
+        operating=fraction*annual
+        if seasonal and monthly_costs is not None:
+            first_month=int(max(0,min(12,delay-(y-1)*12)))
+            operating=sum(monthly_costs[first_month:])
+        net=fraction*(margin-fixed)-operating-replacement.get(y,0)+terminal
         flows.append({"year":y,"service_fraction":fraction,
                       "contribution_eur":fraction*margin,"fixed_opex_eur":fraction*fixed,
-                      "operating_cost_eur":fraction*annual,"replacement_eur":replacement.get(y,0),
+                      "operating_cost_eur":operating,"replacement_eur":replacement.get(y,0),
                       "residual_eur":terminal,"net_cashflow_eur":net,"discounted_cashflow_eur":net/(1+discount)**y})
     npv=sum(x["discounted_cashflow_eur"] for x in flows)
     discounted_service_years=sum(x["service_fraction"]/(1+discount)**x["year"] for x in flows)
@@ -140,6 +149,22 @@ def _annual(a, modifiers, deadline):
                   other_variable_cost_eur=other,commitment_cost_eur=solved["commitment_cost_eur"],
                   uncovered_mwh=solved["uncovered_mwh"])
     if monthly:result["monthly_peak_tariffs"]=monthly_rows
+    if a.get("seasonal_commissioning",False):
+        # Allocate the *same annual optimized schedule*, without inventing a
+        # commissioning state for storage, thermal or committed resources.
+        month_costs=[]
+        for row,(start,end,_) in zip(monthly_rows,monthly):
+            ix=slice(start,end)
+            cost=sum(g*p*dt for g,p in zip(grid[ix],scenario["price_eur_mwh"][ix]))+row["cost_eur"]
+            for spec in scenario.get("resources",[]):
+                trace=solved["schedule"]["resources"][spec["id"]]
+                cost+=sum(sum(trace.get(key,[])[ix]) for key in ("generation_mw","discharge_mw","shift_mw","cooling_mw"))*dt*spec.get("variable_cost_eur_mwh",0)
+                cost+=sum(trace.get("startup",[])[ix])*spec.get("startup_cost_eur",0)
+                cost+=sum(trace.get("online",[])[ix])*dt*spec.get("online_cost_eur_per_hour",0)
+            month_costs.append(cost)
+        if not isclose(sum(month_costs),operating,rel_tol=1e-9,abs_tol=.01):
+            return {**result,"dispatch_status":"accounting_error","feasible":False,"message":"Monthly operating cost reconciliation failed"}
+        result["monthly_operating_cost_eur"]=month_costs
     return result
 
 def compare_lifecycle(payload):
@@ -153,7 +178,7 @@ def compare_lifecycle(payload):
     if not isinstance(alternatives,list) or not 1<=len(alternatives)<=MAX_ALTERNATIVES:raise ValueError("1–8 alternatives required")
     for a in alternatives:
         _fields(a,["id","scenario","capex_eur","delay_months","annual_contribution_eur","annual_fixed_opex_eur","tariff"],
-                ["fuel","replacements","residual_value_eur"],"alternative")
+                ["fuel","replacements","residual_value_eur","seasonal_commissioning"],"alternative")
     ids=[_id(a["id"]) for a in alternatives]
     if len(set(ids))!=len(ids):raise ValueError("Duplicate alternative ID")
     reference=payload.get("reference_id",ids[0])
@@ -174,7 +199,7 @@ def compare_lifecycle(payload):
             annual=_annual(a,case,deadline)
             row={"id":a["id"],"annual":annual,"eligible":False}
             if annual["dispatch_status"]=="solved":
-                finance=_cashflows(annual["annual_operating_cost_eur"],a,years,discount,case["capex_multiplier"],case["extra_delay_months"])
+                finance=_cashflows(annual["annual_operating_cost_eur"],a,years,discount,case["capex_multiplier"],case["extra_delay_months"],annual.get("monthly_operating_cost_eur"))
                 row["finance"]=finance
                 row["eligible"]=annual["feasible"] and finance["discounted_service_years"]>0
             else:
@@ -196,5 +221,8 @@ def compare_lifecycle(payload):
             "limitations":"One supplied operating year repeated in real EUR; fractional service years prorate all annual costs and contribution, including peak tariff. Capex at year zero, cashflows at year end. No tax, financing, degradation, escalation, outage probabilities or external certification. Annual peak tariff is a single site maximum, not monthly demand billing. Emissions factors and contribution are user assumptions, not forecasts. Perfect-foresight dispatch."}
     if any("monthly_peak_eur_mw" in a["tariff"] for a in alternatives):
         result["limitations"]=result["limitations"].replace("Annual peak tariff is a single site maximum, not monthly demand billing.", "Monthly peak tariff uses sampled maxima in a non-leap Jan–Dec year.")
+    if any(a.get("seasonal_commissioning",False) for a in alternatives):
+        result["limitations"]=result["limitations"].replace("fractional service years prorate all annual costs and contribution, including peak tariff.", "nonseasonal alternatives prorate all annual costs and contribution, including peak tariff.")
+        result["limitations"]+=" Seasonal alternatives assume January project start and allocate operating costs from active calendar months of the optimized annual schedule; contribution and fixed costs remain prorated. Initial plant state at commissioning and partial-year redispatch are not validated."
     result["evidence"]["result_sha256"]=_digest(result)
     return result
