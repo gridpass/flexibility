@@ -89,9 +89,46 @@ class Causal(unittest.TestCase):
     def test_unexpected_recovery_outage_not_silently_reset(self):
         r=replay(site(events=[event(1,3,60)],resources=[workload(availability=[1,1,1,0,0,0,0,0])]),5)
         self.assertFalse(r["feasible"])
+        self.assertEqual(r["status"],"solved")
+        self.assertEqual(r["executed_intervals"],8)
+        self.assertAlmostEqual(r["terminal_backlog_mwh"]["w"],4,places=5)
+        self.assertAlmostEqual(r["missed_deadline_mwh"],4,places=5)
+        self.assertEqual([x["interval"] for x in r["missed_deadlines"]],[4,5])
+        self.assertEqual([x["interval"] for x in r["fallbacks"]],list(range(3,8)))
+
+    def test_fallback_late_recovery_and_prefix_invariance(self):
+        a=site(events=[event(1,3,60)],resources=[workload(availability=[1,1,1,0,0,1,1,1])])
+        b=deepcopy(a);b["resources"][0]["availability"][5:]=[0,0,0]
+        r=replay(a,5);other=replay(b,5)
+        self.assertEqual(r["status"],"solved")
+        self.assertFalse(r["feasible"])
+        self.assertAlmostEqual(r["missed_deadline_mwh"],4,places=5)
+        self.assertAlmostEqual(r["terminal_backlog_mwh"]["w"],0,places=5)
+        w=r["schedule"]["resources"]["w"]
+        self.assertAlmostEqual(sum(w["shift_mw"]),sum(w["recovery_mw"]),places=5)
+        for key in ("shift_mw","recovery_mw","backlog_mwh"):
+            self.assertEqual(w[key][:5],other["schedule"]["resources"]["w"][key][:5])
+        self.assertEqual(r["missed_deadlines"][:1],other["missed_deadlines"][:1])
+
+    def test_fallback_does_not_retry_timeout(self):
+        with patch("gridpass_flexibility.causal.evaluate",return_value={"status":"solver_failed","solver_status":1,"message":"timeout"}) as solve:
+            r=replay(site(resources=[workload()]))
+        self.assertEqual(solve.call_count,1)
         self.assertEqual(r["status"],"replay_failed")
-        self.assertEqual(r["executed_intervals"],3)
-        self.assertAlmostEqual(r["failure"]["observed_backlog_mwh"]["w"],4,places=5)
+        self.assertEqual(r["fallbacks"],[])
+
+    def test_fallback_preserves_hard_thermal_constraint(self):
+        # The real infeasible forecast and fallback must not
+        # invent cooling capacity or relax the physical bound.
+        thermal={"id":"c","kind":"thermal_cooling","power_mw":0,
+            "initial_temp_c":24,"min_temp_c":18,"max_temp_c":24,
+            "thermal_capacitance_mwh_per_k":1,"thermal_conductance_mw_per_k":0,
+            "ambient_c":30,"heat_gain_mw":1,"cop":3,"baseline_cooling_mw":0}
+        r=replay(site(resources=[workload(),thermal]),2)
+        self.assertEqual(r["status"],"replay_failed")
+        self.assertFalse(r["feasible"])
+        self.assertEqual(r["executed_intervals"],0)
+        self.assertEqual(r["fallbacks"][0]["status"],"solver_failed")
 
     def test_terminal_storage_shortfall(self):
         r=replay(site(4,events=[event(2,4,0)],resources=[battery(initial_mwh=4)]),4)

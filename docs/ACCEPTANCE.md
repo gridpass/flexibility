@@ -71,12 +71,18 @@ Goal: an independently usable open-source large-load flexibility assessment work
 - Legacy three-input calculator and screening API remained available. Unauthorized upstream returned 401; invalid advanced input returned 422; consent-free review was rejected; private contacts returned 401.
 - Local tests establish busy, timeout, and process recovery behavior; no intentional production outage or sustained load test was performed. This is a resource-bounded initial deployment, not an independently audited security or availability guarantee. External field acceptance and calibrated plant response remain separate gates.
 
+## Verified locally in v0.3.8 (degraded workload recovery)
+
+- A proven infeasible forecast can retry one observed sample using the same LP/MILP. No new workload deferral, no reset of existing FIFO deadlines, no relaxation of physical, power, temperature, or equipment constraints. Minimize current cap gap, then residual workload energy, other recovery deficits and cost. Timeouts are not retried; an infeasible fallback stops the replay.
+- Permanent synthetic recovery outage: all eight samples execute, 4 MWh miss their original deadlines and remain outstanding. Temporary outage: 4 MWh miss deadlines and are subsequently recovered; the replay remains non-passing. Prefix invariance after an outage, timeout rejection and hard thermal limit preservation tested. 120 installed-package tests passed.
+- This is an offline degraded workload policy only. Thermal plant fallback and operator-approved live protection, calibration and field acceptance remain external or separate engineering gates. Production currently runs v0.3.7; repeat hosted parity after deployment of this version.
+
 ## Remaining release gates
 
 | Gate | Acceptance evidence |
 |---|---|
 | Profile interoperability | Independent schema and conformance tests now implemented; obtain authoritative EPRI class semantics and operator-specific rules before any formal mapping |
-| Operational feasibility | Sampled causal replay, discrete dispatch, forced-trip/restart and state carryover implemented; remaining fallback control, calibrated plant response, finer response checks and independent field validation |
+| Operational feasibility | Sampled causal replay, discrete dispatch, forced-trip/restart and state carryover implemented; sampled degraded workload recovery implemented; remaining plant-specific fallback control, calibrated plant response, finer response checks and independent field validation |
 | Resource models | Temperature-constrained cooling, protected loads and renewable curtailment implemented; remaining calibrated thermal and workload parameters and real measured traces with clear reuse permissions |
 | Economics | Common real-EUR NPV, investment/fixed costs, replacement, fuel, emissions, single annual peak tariff, connection-delay value and reoptimized sensitivity implemented and analytically checked; remaining real-site assumptions, finer tariff/seasonal resolution, causal evidence |
 | Validation | Closed-form and synthetic full-year 15-minute cases implemented; a small exhaustive commitment cost cross-check is implemented; sampled failure injection and prefix invariance now tested; first normalized measured trace replay and repeatable benchmark artifact implemented; remaining physical-unit trace replay, finer numerical tolerance and independent field response evidence |

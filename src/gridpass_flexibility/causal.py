@@ -79,11 +79,11 @@ def replay(scenario: dict, lookahead_intervals: int=24, time_limit_s: float=60) 
         trace[rid]={"kind":kind}
     result={"status":"solved","feasible":False,"horizon_hours":n*dt,"executed_intervals":0,
             "schedule":{"grid_import_mw":[],"import_cap_mw":[],"uncovered_mw":[],"resources":trace},
-            "observations":[],"forced_trips":[],"operating_cost_eur":0.0,
+            "observations":[],"forced_trips":[],"fallbacks":[],"missed_deadlines":[],"operating_cost_eur":0.0,
             "evidence":{"engine_version":__version__,"evidence_type":"causal_sampled_replay",
-                        "scenario_sha256":_digest(scenario),"policy":"persistence-receding-horizon-v1",
+                        "scenario_sha256":_digest(scenario),"policy":"persistence-receding-horizon-v2",
                         "lookahead_intervals":lookahead_intervals,"time_limit_s":time_limit_s},
-            "limitations":"Sampled simulation, not live control. Future observations are forecast by persistence. Only announced event schedules are known. The solver prioritizes current cap, forecast total gaps, battery recovery outside events, then cost. No subinterval response or universal robustness claim."}
+            "limitations":"Sampled simulation, not live control. Future observations are forecast by persistence. Only announced event schedules are known. The solver prioritizes current cap, forecast total gaps, battery recovery outside events, then cost. On an infeasible workload forecast a one-sample fallback forbids new deferrals and preserves outstanding energy; fallback use is non-passing. No subinterval response or universal robustness claim."}
     for t in range(n):
         if monotonic()>=deadline:
             result.update(status="replay_failed",failure={"interval":t,"message":"Causal replay time budget exhausted","solver_status":1})
@@ -143,7 +143,17 @@ def replay(scenario: dict, lookahead_intervals: int=24, time_limit_s: float=60) 
         result["observations"].append({"interval":t,"baseline_mw":demand[t],"normal_import_cap_mw":normal[t],
             "price_eur_mwh":prices[t],"protected_load_mw":protected[t],"thermal_inputs":{rid:{key:th[key][t] for key in ("ambient_c","heat_gain_mw","cop","baseline_cooling_mw")} for rid,th in thermal.items()},"availability":{rid:a[t] for rid,a in availability.items()},
             "announced_events":[{k:v for k,v in e.items() if k!="reveal"} for e in known]})
-        plan=evaluate(window,_causal_state={"backlogs":backlogs,"recharge_targets":targets,"thermal_targets":thermal_targets},_deadline=deadline)
+        context={"backlogs":backlogs,"recharge_targets":targets,"thermal_targets":thermal_targets}
+        plan=evaluate(window,_causal_state=context,_deadline=deadline)
+        # Only a proven infeasible forecast triggers the single-step policy.
+        # Never reinterpret timeouts, numerical failures or invalid inputs.
+        if plan["status"]!="solved" and plan.get("solver_status")==2 and backlogs:
+            reason=plan["message"]
+            one=deepcopy(window)
+            one["baseline_mw"]=one["baseline_mw"][:1]
+            one["events"]=[{**e,"end":1} for e in window_events if e["start"]==0]
+            plan=evaluate(one,_causal_state={**context,"recovery_fallback":True},_deadline=deadline)
+            result["fallbacks"].append({"interval":t,"reason":reason,"status":plan["status"]})
         if plan["status"]!="solved":
             result.update(status="replay_failed",failure={"interval":t,"message":plan["message"],
                 "solver_status":plan.get("solver_status"),"observed_backlog_mwh":{rid:sum(a for _,a in q) for rid,q in backlogs.items()}})
@@ -184,6 +194,11 @@ def replay(scenario: dict, lookahead_intervals: int=24, time_limit_s: float=60) 
                     if remaining>1e-8:queue.append((due,remaining))
                 shifted=action["shift_mw"]*dt
                 if shifted>1e-8:queue.append((t+st["delay"],shifted))
+                # Record each newly missed deadline exactly once. Overdue
+                # work remains in the queue until actually recovered.
+                missed=sum(a for due,a in queue if due==t)
+                if missed>TOL:
+                    result["missed_deadlines"].append({"interval":t,"resource":rid,"mwh":missed})
                 st["queue"]=queue
                 cost+=shifted*variable
         result["operating_cost_eur"]+=cost
@@ -195,7 +210,8 @@ def replay(scenario: dict, lookahead_intervals: int=24, time_limit_s: float=60) 
     result["terminal_recovery_shortfall_mwh"]={rid:max(0,goal-state[rid]["soc"]) for rid,goal in targets.items()}
     result["terminal_backlog_mwh"]={rid:sum(a for _,a in st["queue"]) for rid,st in state.items() if "queue" in st}
     result["terminal_thermal_shortfall_c"]={rid:max(0,state[rid]["temperature_c"]-goal) for rid,goal in thermal_targets.items()}
-    result["feasible"]=(result["status"]=="solved" and result["peak_uncovered_mw"]<=TOL and
+    result["missed_deadline_mwh"]=sum(x["mwh"] for x in result["missed_deadlines"])
+    result["feasible"]=(result["status"]=="solved" and not result["fallbacks"] and not result["missed_deadlines"] and result["peak_uncovered_mw"]<=TOL and
         all(v<=TOL for v in result["terminal_recovery_shortfall_mwh"].values()) and all(v<=TOL for v in result["terminal_backlog_mwh"].values()) and all(v<=TOL for v in result["terminal_thermal_shortfall_c"].values()))
     result["evidence"]["result_sha256"]=_digest(result)
     return result
