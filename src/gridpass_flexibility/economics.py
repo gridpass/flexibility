@@ -1,7 +1,7 @@
 """Real-EUR lifecycle comparison of feasible annual connection alternatives.
 
 The chronological dispatch engine optimizes energy, carbon, fuel and an
-annual coincident-free site peak fee. Finance is a separate transparent layer.
+annual or monthly non-coincident site peak fees. Finance is a separate transparent layer.
 No inferred revenue, emissions factors, discount rate or annualization.
 """
 from __future__ import annotations
@@ -55,18 +55,39 @@ def _cashflows(annual, a, years, discount, capex_factor, extra_delay):
     return {"npv_eur":npv,"cashflows":flows,"initial_capex_eur":capex,"delay_months":delay,
             "discounted_service_years":discounted_service_years}
 
+def _monthly_periods(tariff, dt, n):
+    """Non-leap Jan–Dec billing periods; samples cannot straddle boundaries."""
+    if "monthly_peak_eur_mw" not in tariff:
+        return []
+    if "annual_peak_eur_mw" in tariff:
+        raise ValueError("Choose annual or monthly peak tariff, not both")
+    rates=tariff["monthly_peak_eur_mw"]
+    if not isinstance(rates,list) or len(rates)!=12:
+        raise ValueError("monthly_peak_eur_mw requires 12 Jan–Dec rates")
+    periods=[]
+    hours=0
+    for days,rate in zip((31,28,31,30,31,30,31,31,30,31,30,31),rates):
+        start=round(hours/dt)
+        hours+=24*days
+        end=round(hours/dt)
+        if abs(end*dt-hours)>1e-6 or not 0<=start<end<=n:
+            raise ValueError("Intervals must align with calendar month boundaries")
+        periods.append((start,end,_number(rate,"monthly peak tariff")))
+    return periods
+
 def _annual(a, modifiers, deadline):
     scenario=deepcopy(a["scenario"])
     n=len(scenario["baseline_mw"]);dt=_number(scenario["interval_hours"],"interval hours",1/3600,24)
     if abs(n*dt-8760)>1e-6:raise ValueError("Economics requires a complete 8760-hour operating year")
     prices=_series(scenario,"price_eur_mwh",n)
     tariff=a.get("tariff",{})
-    _fields(tariff,[],["grid_emissions_kg_mwh","carbon_eur_tonne","annual_peak_eur_mw"],"tariff")
+    _fields(tariff,[],["grid_emissions_kg_mwh","carbon_eur_tonne","annual_peak_eur_mw","monthly_peak_eur_mw"],"tariff")
     # Require explicit grid factor, including a declared zero, to avoid silently omitting emissions.
     if "grid_emissions_kg_mwh" not in tariff:raise ValueError("Declare grid_emissions_kg_mwh explicitly")
     grid_ef=_series({"ef":tariff["grid_emissions_kg_mwh"]},"ef",n)
     carbon=_number(tariff.get("carbon_eur_tonne",0),"carbon price")*modifiers["carbon_multiplier"]
     peak_price=_number(tariff.get("annual_peak_eur_mw",0),"annual peak tariff")
+    monthly=_monthly_periods(tariff,dt,n)
     energy_price=[p*modifiers["electricity_multiplier"] for p in prices]
     scenario["price_eur_mwh"]=[p+carbon*ef/1000 for p,ef in zip(energy_price,grid_ef)]
     fuel=a.get("fuel",{})
@@ -86,7 +107,7 @@ def _annual(a, modifiers, deadline):
     if monotonic()>=deadline:
         return {"dispatch_status":"solver_failed","feasible":False,"message":"Economics time budget exhausted",
                 "evidence":{"engine_version":__version__,"scenario_sha256":_digest(scenario)}}
-    solved=evaluate(scenario,_peak_import_cost=peak_price,_deadline=deadline)
+    solved=evaluate(scenario,_peak_import_cost=peak_price,_peak_periods=monthly,_deadline=deadline)
     result={"dispatch_status":solved["status"],"feasible":solved.get("feasible",False),"evidence":solved["evidence"]}
     if solved["status"]!="solved":
         result["message"]=solved["message"]
@@ -99,7 +120,9 @@ def _annual(a, modifiers, deadline):
         consumed=sum(solved["schedule"]["resources"][name]["generation_mw"])*dt/eta
         fuel_mwh+=consumed;fuel_cost+=consumed*price;fuel_emissions+=consumed*ef/1000
     carbon_cost=carbon*(grid_emissions+fuel_emissions)
-    peak_cost=peak*peak_price
+    monthly_rows=[{"month":i+1,"peak_import_mw":max(grid[start:end]),"rate_eur_mw":rate,
+                   "cost_eur":max(grid[start:end])*rate} for i,(start,end,rate) in enumerate(monthly)]
+    peak_cost=peak*peak_price+sum(row["cost_eur"] for row in monthly_rows)
     operating=solved["operating_cost_eur"]
     # Independently reconstruct operating costs from the *original* nonfuel
     # resource rates and the optimized trace; do not hide errors in a residual.
@@ -116,6 +139,7 @@ def _annual(a, modifiers, deadline):
                   fuel_emissions_tonnes=fuel_emissions,carbon_cost_eur=carbon_cost,
                   other_variable_cost_eur=other,commitment_cost_eur=solved["commitment_cost_eur"],
                   uncovered_mwh=solved["uncovered_mwh"])
+    if monthly:result["monthly_peak_tariffs"]=monthly_rows
     return result
 
 def compare_lifecycle(payload):
@@ -170,5 +194,7 @@ def compare_lifecycle(payload):
             "years":years,"real_discount_rate":discount,"reference_id":reference,"cases":results,
             "evidence":{"engine_version":__version__,"input_sha256":_digest(payload),"evidence_type":"modeled_lifecycle_economics"},
             "limitations":"One supplied operating year repeated in real EUR; fractional service years prorate all annual costs and contribution, including peak tariff. Capex at year zero, cashflows at year end. No tax, financing, degradation, escalation, outage probabilities or external certification. Annual peak tariff is a single site maximum, not monthly demand billing. Emissions factors and contribution are user assumptions, not forecasts. Perfect-foresight dispatch."}
+    if any("monthly_peak_eur_mw" in a["tariff"] for a in alternatives):
+        result["limitations"]=result["limitations"].replace("Annual peak tariff is a single site maximum, not monthly demand billing.", "Monthly peak tariff uses sampled maxima in a non-leap Jan–Dec year.")
     result["evidence"]["result_sha256"]=_digest(result)
     return result
