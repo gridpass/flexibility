@@ -34,3 +34,18 @@ Use the four held-out total-site power traces, normalized to a median of 1 MW an
 These are tests with measured demand variation and hypothetical units, equipment, tariffs and restrictions, not evidence that the AAU sites performed those flexibility actions. The committed [benchmark output](../benchmarks/aau-holdout-v1.json) contains only summary metrics, model coefficients, provenance and hashes, not raw observations.
 
 The Frontier HPC archive metadata and CC BY 4.0 licence were reconfirmed, but the upstream download returned HTTP 403 on 24 November 2026. No Frontier result is reported. Physical parameter fitting with confirmed units and isolated measured actuator data, measured workload response, and actual site acceptance are still open.
+
+## Physical-unit industrial demand replay
+
+Source: Sathishkumar V E, Changsun Shin and Yongyun Cho (2021), *Steel Industry Energy Consumption*, [UCI DOI 10.24432/C52G8C](https://doi.org/10.24432/C52G8C), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The source identifies the steel facility in Gwangyang, South Korea; the 2018 dataset records 15-minute energy in kWh. The archive's midnight label is the final ordered reading of each source day (00:15 through 23:45 then 00:00); the importer checks the date and seconds-from-midnight against all 96 samples per day, without filling gaps. Convert each interval's energy to average MW using kWh / 1000 / 0.25 h. This is not instantaneous peak power.
+
+Reproduce with an installed optimization environment:
+
+```sh
+curl -fL 'https://archive.ics.uci.edu/static/public/851/steel+industry+energy+consumption.zip' -o /tmp/steel.zip
+python scripts/benchmark_steel.py /tmp/steel.zip
+```
+
+The pinned archive contains 35,040 intervals, 959.63671 MWh measured annual energy and 0.62872 MW maximum interval-average power. Replay the first seven days of each calendar month, 8,064 samples in total, with seven daily 10:00–14:00 restrictions per window at a hypothetical 0.15 MW cap. Use a hypothetical 0.3 MW / 0.6 MWh battery with 95% charge and discharge efficiency and full initial/terminal state of charge. Independent checks reconcile the measured energy, no-asset gap, every interval's electrical/SOC balance and battery limits, modeled gap, losses and terminal SOC. The baseline has 24.57368 MWh uncovered; the battery leaves 1.329863 MWh uncovered and meets all restrictions in only three of twelve windows. See [summary artifact](../benchmarks/steel-physical-v1.json). No raw measurements are distributed.
+
+This is chronological perfect-foresight replay of measured demand, not measured battery response, a full-year dispatch test, a calibrated thermal model or field validation. The equipment, tariffs and grid restrictions are hypothetical, and no scale normalization is used. The physical-unit demand trace gate has evidence; actual actuator and workload calibration still require appropriate measurements.
