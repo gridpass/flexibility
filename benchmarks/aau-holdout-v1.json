@@ -1,0 +1,191 @@
+{
+  "benchmark_version": "aau-holdout-v1",
+  "engine_version": "0.3.6",
+  "limitations": "Empirical one-sample temperature prediction, not identification of physical capacitance, COP or conductance. Source time and power units unconfirmed. Dispatch preserves measured variation but uses hypothetical 1 MW median and one-minute intervals, assets and caps. No measured response to flexibility events or field validation.",
+  "measured_samples": 11520,
+  "normalized_dispatch": {
+    "Baseline": {
+      "assumed_cap_mw": 0.95,
+      "assumed_interval_hours": 0.016666666666666666,
+      "assumed_median_mw": 1,
+      "baseline_evidence": {
+        "engine_version": "0.3.6",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "8ce6d6eb387418af589302814f30401245c70be53c25a3f1b63222362f3250da",
+        "scenario_sha256": "ad991fc0dfb59d6fc008d7b41222f1d7a9bbe59ee45096bd18ca01e8f16729dd",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.6",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "f144e109f2313919e2506ac7513780aea1e5a4f316772ba126e0cda3bd8b0eeb",
+        "scenario_sha256": "e9a5c2ece90b4f10aae2bf67b2db0fe4322445e1dcc94b2aca4ca7b3d1419665",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": true,
+      "battery_uncovered_mwh": 1.666666665789407e-09,
+      "event_end_sample_exclusive": 360,
+      "event_start_sample": 240,
+      "independent_uncovered_mwh": 0.12856554146030447,
+      "no_asset_uncovered_mwh": 0.12856554146030447,
+      "sample_count": 720
+    },
+    "Plate": {
+      "assumed_cap_mw": 0.95,
+      "assumed_interval_hours": 0.016666666666666666,
+      "assumed_median_mw": 1,
+      "baseline_evidence": {
+        "engine_version": "0.3.6",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "058f6285008101ab5e275bf1619b361cd3f011ece7c3b92c161620b24d1c8586",
+        "scenario_sha256": "69963bc7294b4fc8956c50aefbfafd16e4c2a3f03695d1959d1ec113c71559b6",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.6",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "e31643685f62f84b5b457b958c7da6b78aa82ee9b90e929ae5ab0cd7531d6db5",
+        "scenario_sha256": "fc8030124203efd37c442468f1202d71abff73ae25a9c1182922596e12b65582",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": true,
+      "battery_uncovered_mwh": 1.666666665789407e-09,
+      "event_end_sample_exclusive": 360,
+      "event_start_sample": 240,
+      "independent_uncovered_mwh": 0.09667695473251024,
+      "no_asset_uncovered_mwh": 0.09667695473251024,
+      "sample_count": 720
+    },
+    "PlateWall": {
+      "assumed_cap_mw": 0.95,
+      "assumed_interval_hours": 0.016666666666666666,
+      "assumed_median_mw": 1,
+      "baseline_evidence": {
+        "engine_version": "0.3.6",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "f28efd258538e17e145652f2bbfab689fb3174a88c209703cfe500ea40b6a393",
+        "scenario_sha256": "e07d29e8ff6032e4ca5f5f25ecf7ed4ce9c61be84c3e968a7bf8cbbcbe16680d",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.6",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "347c8f3bd93719337857a2c51eef27819c354303d1c73394d1458497231b371c",
+        "scenario_sha256": "10b4dbee00f7aae683dff468e8d633c35e936cada646a1b114a1f7c77bb1a525",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": true,
+      "battery_uncovered_mwh": 1.666666665789407e-09,
+      "event_end_sample_exclusive": 360,
+      "event_start_sample": 240,
+      "independent_uncovered_mwh": 0.1360908921239269,
+      "no_asset_uncovered_mwh": 0.13609089212392686,
+      "sample_count": 720
+    },
+    "Wall": {
+      "assumed_cap_mw": 0.95,
+      "assumed_interval_hours": 0.016666666666666666,
+      "assumed_median_mw": 1,
+      "baseline_evidence": {
+        "engine_version": "0.3.6",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "4676d2b39d708f9088c3c6f3f79f81b038b9216082cfb01cc7c3cba4822576cc",
+        "scenario_sha256": "a7d4458517a65ae94f4dfb17bbba44cd0684a3d36d71e8fca19e0d556a03ac6a",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.6",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "2a6ff5daae13c695d2c36cba865ac6eb06d9c2c030337eac0ea3250b47aea1ad",
+        "scenario_sha256": "db56c342ccbb3c60a5e87bc942ee0bad2b1a9edcdbde32d2212da46bf125e0d2",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": true,
+      "battery_uncovered_mwh": 1.666666665789407e-09,
+      "event_end_sample_exclusive": 360,
+      "event_start_sample": 240,
+      "independent_uncovered_mwh": 0.09283406754772397,
+      "no_asset_uncovered_mwh": 0.09283406754772397,
+      "sample_count": 720
+    }
+  },
+  "source": {
+    "creators": "Simon Pommerencke Melgaard, Thomas Juul, Jesper Ellerb\u00e6k Nielsen, Wojciech Szeliga, Ariel Oleksiak, Mustafa Kuzay, Ender Demirel",
+    "doi": "10.5281/zenodo.22797095",
+    "license": "CC BY 4.0",
+    "md5": "13d33d17938006a0055d79652c982dd9",
+    "sha256": "4d1b502bbbc8e0e9e9636cf18c48650691c5c8c9c1e86346d21ae0b0140b8af4",
+    "url": "https://zenodo.org/api/records/22797095/files/AAU.tar.xz/content"
+  },
+  "split": "Separate runs: 25/50/75% IT load training; 100% held out per configuration.",
+  "temperature_holdouts": {
+    "Baseline": {
+      "coefficients": [
+        11.391701362972238,
+        0.9826262616352475,
+        -0.48743058823358987,
+        -5.140944948219783
+      ],
+      "heldout_mae_c": 2.788582485226046,
+      "heldout_rmse_c": 2.964496949090113,
+      "heldout_samples": 719,
+      "persistence_mae_c": 2.085764083449235,
+      "persistence_rmse_c": 3.1202323040417888,
+      "training_samples": 2157,
+      "training_site_power_median_source_units": 2.05
+    },
+    "Plate": {
+      "coefficients": [
+        14.580753753349898,
+        0.5782572848042736,
+        -0.34580054522816456,
+        2.8753396498388897
+      ],
+      "heldout_mae_c": 4.224881529365718,
+      "heldout_rmse_c": 4.52344473596254,
+      "heldout_samples": 719,
+      "persistence_mae_c": 4.770697301808067,
+      "persistence_rmse_c": 5.799906188445899,
+      "training_samples": 2157,
+      "training_site_power_median_source_units": 2.05
+    },
+    "PlateWall": {
+      "coefficients": [
+        8.715769289532535,
+        0.5664923287643344,
+        -0.0001452538851769436,
+        -0.7336991886139096
+      ],
+      "heldout_mae_c": 1.2037646106562312,
+      "heldout_rmse_c": 1.5352177262380642,
+      "heldout_samples": 719,
+      "persistence_mae_c": 1.3382614742698193,
+      "persistence_rmse_c": 1.7414248877793923,
+      "training_samples": 2157,
+      "training_site_power_median_source_units": 1.972694
+    },
+    "Wall": {
+      "coefficients": [
+        6.370213422987185,
+        0.5512031991086024,
+        0.0911376943796115,
+        1.0206792692789166
+      ],
+      "heldout_mae_c": 1.3238411822203846,
+      "heldout_rmse_c": 1.7219188669340808,
+      "heldout_samples": 719,
+      "persistence_mae_c": 1.3530598052851182,
+      "persistence_rmse_c": 1.8895772610065285,
+      "training_samples": 2157,
+      "training_site_power_median_source_units": 1.84
+    }
+  }
+}

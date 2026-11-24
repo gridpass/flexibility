@@ -52,6 +52,12 @@ Goal: an independently usable open-source large-load flexibility assessment work
 - Closed-form annual cost, fuel/emissions, NPV, time-to-power, reserve of feasible alternatives, peak-aware dispatch and reoptimized sensitivity tests exercise the shared CLI/MCP operation. See [economics specification](ECONOMICS.md).
 - Monthly tariff schedules, seasonal commissioning, site-calibrated assumptions and causal/field validation remain outside this release.
 
+## Verified in v0.3.6 (measured trace benchmark)
+
+- Downloaded and checksum-verified CC BY 4.0 HEATWISE AAU archive, 16 runs and 11,520 observations. The reproducible offline benchmark uses separate 100% load runs as holdouts, reports errors against persistence, and independently checks the canonical dispatch model on normalized measured demand variation.
+- The empirical predictor beats persistence in three of four configurations, but fails in the baseline configuration. It is not a calibrated physical thermal model or safe control policy. Source power/time units remain unconfirmed; dispatch uses explicitly hypothetical scales. No raw third-party data are committed.
+- See [measured benchmark](MEASURED.md). Physical calibration with known units and isolated actuator data, workload measurements, real response and independent field evidence remain open.
+
 ## Remaining release gates
 
 | Gate | Acceptance evidence |
@@ -60,7 +66,7 @@ Goal: an independently usable open-source large-load flexibility assessment work
 | Operational feasibility | Sampled causal replay, discrete dispatch, forced-trip/restart and state carryover implemented; remaining fallback control, calibrated plant response, finer response checks and independent field validation |
 | Resource models | Temperature-constrained cooling, protected loads and renewable curtailment implemented; remaining calibrated thermal and workload parameters and real measured traces with clear reuse permissions |
 | Economics | Common real-EUR NPV, investment/fixed costs, replacement, fuel, emissions, single annual peak tariff, connection-delay value and reoptimized sensitivity implemented and analytically checked; remaining real-site assumptions, finer tariff/seasonal resolution, causal evidence |
-| Validation | Closed-form and synthetic full-year 15-minute cases implemented; a small exhaustive commitment cost cross-check is implemented; sampled failure injection and prefix invariance now tested; remaining real trace replay, finer numerical tolerance and repeatable benchmark artifacts |
+| Validation | Closed-form and synthetic full-year 15-minute cases implemented; a small exhaustive commitment cost cross-check is implemented; sampled failure injection and prefix invariance now tested; first normalized measured trace replay and repeatable benchmark artifact implemented; remaining physical-unit trace replay, finer numerical tolerance and independent field response evidence |
 | Hosted parity | Public website and existing MCP use this canonical engine, provide a simple entry point plus advanced operations; authenticated or resource-bounded optimization; live endpoint tests, no customer data leakage |
 | Usability | Documented examples, versioned request/response schema, clear error states, inspectable schedules, exportable results and limitations |
 
