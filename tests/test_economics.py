@@ -255,3 +255,81 @@ class EconomicsTests(unittest.TestCase):
         case=compare_lifecycle(request(a))["cases"][0]
         self.assertTrue(case["alternatives"][0]["boundary_validation"]["pass"])
         self.assertEqual(case["recommended"],"standard")
+
+    def test_interyear_redispatch_pays_to_recharge(self):
+        a=alternative(interyear_reoptimization=True,tariff={"grid_emissions_kg_mwh":0})
+        a["scenario"]["events"]=[{"start":364,"end":365,"cap_mw":0,"notice_minutes":1440}]
+        a["scenario"]["resources"]=[{"id":"b","kind":"battery","power_mw":1,
+            "energy_mwh":24,"initial_mwh":24,"terminal_mwh":0,
+            "charge_efficiency":1,"discharge_efficiency":1}]
+        case=compare_lifecycle(request(a))["cases"][0]
+        row=case["alternatives"][0]
+        self.assertEqual(case["recommended"],"standard")
+        first,second=row["operating_years"]
+        self.assertEqual(first["next_initial_state"]["b"]["initial_mwh"],0)
+        self.assertEqual(second["carried_initial_state"],first["next_initial_state"])
+        self.assertAlmostEqual(second["annual_operating_cost_eur"]-first["annual_operating_cost_eur"],2400)
+        self.assertAlmostEqual(row["finance"]["cashflows"][2]["operating_cost_eur"],second["annual_operating_cost_eur"])
+        a["scenario"]["normal_import_cap_mw"]=1
+        row=compare_lifecycle(request(a))["cases"][0]["alternatives"][0]
+        self.assertFalse(row["eligible"])
+        self.assertAlmostEqual(row["operating_years"][1]["uncovered_mwh"],24)
+
+    def test_interyear_commissioning_carries_actual_state(self):
+        a=alternative(delay_months=6,seasonal_commissioning=True,interyear_reoptimization=True,
+            tariff={"grid_emissions_kg_mwh":0,"monthly_peak_eur_mw":[0]*12})
+        a["scenario"]["events"]=[{"start":364,"end":365,"cap_mw":0,"notice_minutes":1440}]
+        a["scenario"]["resources"]=[{"id":"b","kind":"battery","power_mw":1,
+            "energy_mwh":24,"initial_mwh":24,"terminal_mwh":0,
+            "charge_efficiency":1,"discharge_efficiency":1}]
+        row=compare_lifecycle(request(a))["cases"][0]["alternatives"][0]
+        first,second=row["operating_years"]
+        self.assertTrue(row["eligible"])
+        self.assertEqual(first["first_service_month"],7)
+        self.assertEqual(second["carried_initial_state"]["b"]["initial_mwh"],0)
+        self.assertAlmostEqual(first["annual_operating_cost_eur"],439200)
+        self.assertAlmostEqual(second["annual_operating_cost_eur"],876000)
+
+    def test_interyear_carry_thermal_targets_and_discrete_age(self):
+        from gridpass_flexibility.economics import _carry_state
+        s={"interval_hours":1,"resources":[
+           {"id":"g","kind":"generator","initial_on":True,"initial_mw":1,"initial_state_hours":3},
+           {"id":"t","kind":"thermal_cooling","initial_temp_c":20},
+           {"id":"w","kind":"workload"}]}
+        trace={"resources":{"g":{"generation_mw":[1,1],"online":[1,1]},
+            "t":{"temperature_c":[20,19]},"w":{"backlog_mwh":[1,0]}}}
+        state=_carry_state(s,trace)
+        self.assertEqual(state["g"]["initial_state_hours"],5)
+        self.assertEqual(state["t"],{"initial_temp_c":19,"terminal_max_temp_c":20})
+        trace["resources"]["g"]["online"]=[1,0]
+        self.assertEqual(_carry_state(s,trace)["g"]["initial_state_hours"],1)
+        trace["resources"]["w"]["backlog_mwh"][-1]=1
+        with self.assertRaisesRegex(ValueError,"backlog"):
+            _carry_state(s,trace)
+
+    def test_interyear_budget_schema_and_fractional_guard(self):
+        from gridpass_flexibility.budget import check_budget
+        from gridpass_flexibility.interface_schema import validate_evaluation
+        a=alternative(interyear_reoptimization=True)
+        p=request(a)
+        validate_evaluation("request","economics",p)
+        validate_evaluation("response","economics",compare_lifecycle(p))
+        check_budget("economics",p)
+        a["delay_months"]=1
+        with self.assertRaisesRegex(ValueError,"fractional"):
+            compare_lifecycle(p)
+        a["scenario"]["baseline_mw"]=[1]*35040
+        with self.assertRaisesRegex(ValueError,"500,000"):
+            check_budget("economics",request(a,years=50))
+
+    def test_interyear_failed_solve_blocks_recommendation(self):
+        from unittest.mock import patch
+        from gridpass_flexibility.economics import _annual
+        a=alternative(interyear_reoptimization=True)
+        def solve(a,case,deadline,**kw):
+            if kw:return {"dispatch_status":"solver_failed","feasible":False}
+            return _annual(a,case,deadline)
+        with patch("gridpass_flexibility.economics._annual",side_effect=solve):
+            case=compare_lifecycle(request(a))["cases"][0]
+        self.assertFalse(case["comparison_complete"])
+        self.assertIsNone(case["recommended"])
