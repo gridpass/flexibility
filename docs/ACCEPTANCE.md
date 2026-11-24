@@ -64,6 +64,13 @@ Goal: an independently usable open-source large-load flexibility assessment work
 - Real child parity for screening, dispatch and sizing; invalid authorization, complexity/size limits, nonfinite JSON, busy/recovery and process timeout tests pass. See [HTTP service specification](HTTP.md).
 - This is a deployable upstream component, not yet a deployed public service. Existing website and public MCP routing, credential provisioning, isolated service deployment and live parity remain open.
 
+## Verified in production on 2026-11-24 (v0.3.7)
+
+- Installed the tagged engine at commit ca3313d in a dedicated unprivileged system service, loopback-only bind, independent upstream credential, TLS proxy, one concurrent solver, service-level 2 GiB memory and one-CPU quota. Other services retained their routes.
+- The deployed browser API and existing MCP endpoint returned exactly the same JSON (including evidence) as the installed canonical evaluator for all eight synthetic examples: screen, dispatch, compare designs, profile, size, stress, causal and economics. Reproduce with `python scripts/verify_hosted.py` from an installed checkout of the deployed version and matching solver version.
+- Legacy three-input calculator and screening API remained available. Unauthorized upstream returned 401; invalid advanced input returned 422; consent-free review was rejected; private contacts returned 401.
+- Local tests establish busy, timeout, and process recovery behavior; no intentional production outage or sustained load test was performed. This is a resource-bounded initial deployment, not an independently audited security or availability guarantee. External field acceptance and calibrated plant response remain separate gates.
+
 ## Remaining release gates
 
 | Gate | Acceptance evidence |
@@ -73,7 +80,7 @@ Goal: an independently usable open-source large-load flexibility assessment work
 | Resource models | Temperature-constrained cooling, protected loads and renewable curtailment implemented; remaining calibrated thermal and workload parameters and real measured traces with clear reuse permissions |
 | Economics | Common real-EUR NPV, investment/fixed costs, replacement, fuel, emissions, single annual peak tariff, connection-delay value and reoptimized sensitivity implemented and analytically checked; remaining real-site assumptions, finer tariff/seasonal resolution, causal evidence |
 | Validation | Closed-form and synthetic full-year 15-minute cases implemented; a small exhaustive commitment cost cross-check is implemented; sampled failure injection and prefix invariance now tested; first normalized measured trace replay and repeatable benchmark artifact implemented; remaining physical-unit trace replay, finer numerical tolerance and independent field response evidence |
-| Hosted parity | Authenticated resource-bounded HTTP upstream implemented locally; existing public website/MCP routing, dedicated service deployment, secure credential provisioning and live parity remain open |
+| Hosted parity | Initial dedicated authenticated deployment and all eight operation browser/MCP/local parity verified; local busy/timeout tests pass. Production sustained-load, availability monitoring and external security review remain separate operational validation |
 | Usability | Documented examples, versioned request/response schema, clear error states, inspectable schedules, exportable results and limitations |
 
 Do not mark a gate complete based on documentation alone. Keep the five open issues current and close only after tested acceptance evidence. Never claim certification or commercial reuse of third-party restricted software without explicit rights.
