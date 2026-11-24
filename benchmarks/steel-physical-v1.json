@@ -1,0 +1,341 @@
+{
+  "annual_measured_mwh": 959.63671,
+  "annual_peak_interval_average_mw": 0.6287200000000001,
+  "annual_samples": 35040,
+  "benchmark_version": "steel-physical-v1",
+  "engine_version": "0.3.8",
+  "interval_hours": 0.25,
+  "limitations": "Measured demand only; first seven days of each month, hypothetical battery, cap and tariffs, perfect foresight. No measured flexibility response, physical thermal calibration or field acceptance.",
+  "simulated_battery": {
+    "charge_efficiency": 0.95,
+    "discharge_efficiency": 0.95,
+    "energy_mwh": 0.6,
+    "id": "battery",
+    "initial_mwh": 0.6,
+    "kind": "battery",
+    "power_mw": 0.3,
+    "terminal_mwh": 0.6
+  },
+  "simulated_cap_mw": 0.15,
+  "source": {
+    "creators": "Sathishkumar V E, Changsun Shin, Yongyun Cho",
+    "doi": "10.24432/C52G8C",
+    "license": "CC BY 4.0",
+    "sha256": "d82d28b33780ff1582507fcf08ae764ff648af459d58234370c551e62aadeaef",
+    "url": "https://archive.ics.uci.edu/static/public/851/steel+industry+energy+consumption.zip"
+  },
+  "windows": {
+    "2018-01-01": {
+      "baseline_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "516dc2006bb8ca263eae6d8154320445adad618fe0555268f6473528476eaa9a",
+        "scenario_sha256": "0367e5e691aa4632a93073d11b9adea85b276bb5c25dbfdd9776b860fd6315d4",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "d9f64113668c8bcfcd42baadc0ff04ed7ef281fe7598f254b7ef0361540777cc",
+        "scenario_sha256": "6b1ceebe9d11bbe043f686aac5812fca180bdd2de25268155bf59ab53f71163d",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": false,
+      "battery_gap_mwh": 0.4580089250000002,
+      "battery_losses_mwh": 0.24973407735457057,
+      "grid_mwh": 18.49607407735457,
+      "measured_mwh": 18.24634,
+      "no_asset_gap_mwh": 2.76965,
+      "peak_mw": 0.58984,
+      "terminal_soc_mwh": 0.6
+    },
+    "2018-02-01": {
+      "baseline_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "9880cd8e5d68e446d94a2669b3869277250c5a78577a8e9d5001eb5a195e5a81",
+        "scenario_sha256": "b5d3151c9579e3a16501e27af3759eb2101ef91fe2ee06ad98418a89d4521001",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "2fc0f30a1799e9fee125fe5cd3e8c2c9e8253697fd6d7e1fb048074227c92482",
+        "scenario_sha256": "9e918ae3ea60d3c081960bfe0a4355ba01e9268c3c9b493d25c5d9bc77788865",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": false,
+      "battery_gap_mwh": 0.5079282500000002,
+      "battery_losses_mwh": 0.2902152860110805,
+      "grid_mwh": 27.21980528601108,
+      "measured_mwh": 26.92959,
+      "no_asset_gap_mwh": 3.19428,
+      "peak_mw": 0.58204,
+      "terminal_soc_mwh": 0.6
+    },
+    "2018-03-01": {
+      "baseline_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "7f22ea38f7b075c56729ba005f90a65b8a1f19569caf516e7266931c1cf2d377",
+        "scenario_sha256": "b112f8ac079bae50e4b2255df8bbb1c5f8956d1e5d0cea05dfe36cd5735c1dd0",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "c3ffdf41dbaae1f5b194bab91405a83f3ce8774785b2524507c861b013e650f5",
+        "scenario_sha256": "a060ea42213044bbdd047b4b5e8b522f52bc7ab77885120fca75dec308d14b9d",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": false,
+      "battery_gap_mwh": 0.00958002500000002,
+      "battery_losses_mwh": 0.197885565166205,
+      "grid_mwh": 17.387965565166205,
+      "measured_mwh": 17.190080000000002,
+      "no_asset_gap_mwh": 1.84129,
+      "peak_mw": 0.5875199999999999,
+      "terminal_soc_mwh": 0.6
+    },
+    "2018-04-01": {
+      "baseline_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "dee9f0f3aaed1a6e79a6bd80ecb6ac05068b51756cffc8436cc5c7b14c19eaca",
+        "scenario_sha256": "8651602eefe5817d306e7eebdf4100ed9f1edfb4d49c936617625d93766ab2c5",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "caa63b06a84665a4d21430c85ad375b56efd858713a43e07078f766c92aa70d1",
+        "scenario_sha256": "dbf75b4db1d477e1a419cc811a4114fab64a74b2259eba4bae4638527547f121",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": false,
+      "battery_gap_mwh": 0.0029943500000001455,
+      "battery_losses_mwh": 0.2521836851800554,
+      "grid_mwh": 19.432513685180055,
+      "measured_mwh": 19.18033,
+      "no_asset_gap_mwh": 2.33731,
+      "peak_mw": 0.45952,
+      "terminal_soc_mwh": 0.6
+    },
+    "2018-05-01": {
+      "baseline_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "2537f667dd4d24033abcde619c55c82c4e294b4b76817f8587f5ca531783d3d4",
+        "scenario_sha256": "308ddba0fa6b17728d13be38894654bef09132297c9f8fd00bcfbc10dd4d8575",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "5bcefda7dddb85f060d067058dbcef5627c8ae026fb33ab18495beca3407aa55",
+        "scenario_sha256": "26df2b4a2b38211de0ffa43914e39d2d381cd3212744d9f8c430c71c201becb1",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": false,
+      "battery_gap_mwh": 0.2580557000000001,
+      "battery_losses_mwh": 0.22665204349030468,
+      "grid_mwh": 17.171872043490303,
+      "measured_mwh": 16.945220000000003,
+      "no_asset_gap_mwh": 2.35604,
+      "peak_mw": 0.54952,
+      "terminal_soc_mwh": 0.6
+    },
+    "2018-06-01": {
+      "baseline_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "b156f106fa604243c48e3dcabf53ee600f0497e4d4d5ef053fd5ccc6eeb026f4",
+        "scenario_sha256": "f75d13238e3ec2a5b43b6c7738cec46e9ed98e9d31ab815f501b02c0625ab8b4",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "877020f0a845fb215154e10e521a1533e3553dd19ffff495afe7f0fc53f25de7",
+        "scenario_sha256": "5888925387a589c6136f34d988208928c2c762ae9d0e5708fd9c3dbf74ef1139",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": false,
+      "battery_gap_mwh": 0.01861002500000001,
+      "battery_losses_mwh": 0.1569042355263158,
+      "grid_mwh": 16.810884235526316,
+      "measured_mwh": 16.65398,
+      "no_asset_gap_mwh": 1.47098,
+      "peak_mw": 0.50992,
+      "terminal_soc_mwh": 0.6
+    },
+    "2018-07-01": {
+      "baseline_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "fff813ee39ca9d43b5023f8e67b4f5a4224e523ce251bcf5d0ae3af9a15f5a85",
+        "scenario_sha256": "ec4d5336d3e03721412e80380cf9c7394be48291bd7c674320b43f6874ce4e61",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "26951f5520f92262301b0d5fdb12726f2b6eaa97f2fbc1260fbb997d8b94f852",
+        "scenario_sha256": "0d7e3a1dd5dc09583bd674b31c7d3daff9773b548eab7e7611094433755c42d8",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": false,
+      "battery_gap_mwh": 0.006410025000000007,
+      "battery_losses_mwh": 0.2626893047783936,
+      "grid_mwh": 20.402619304778394,
+      "measured_mwh": 20.13993,
+      "no_asset_gap_mwh": 2.4379700000000004,
+      "peak_mw": 0.48672000000000004,
+      "terminal_soc_mwh": 0.6
+    },
+    "2018-08-01": {
+      "baseline_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "325d809a10f05374b99397f3e57f0d6fed245fb0331e45f051307c07b240b76a",
+        "scenario_sha256": "18931a90ce348a76899d604b6d9ad41b8d50cd9fda6f3ac32197360160db4a63",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "7c537dd744a8006e9f5d434e560e216802981fe2dee8717fb634e9e7ac69857d",
+        "scenario_sha256": "9b60640b9263f7d268f9ed25fb8d147099aed8355deafbc24487564b05496ea0",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": true,
+      "battery_gap_mwh": 2.500000000071889e-08,
+      "battery_losses_mwh": 0.12244919397506927,
+      "grid_mwh": 8.54840919397507,
+      "measured_mwh": 8.425960000000002,
+      "no_asset_gap_mwh": 1.1334400000000002,
+      "peak_mw": 0.47248,
+      "terminal_soc_mwh": 0.6
+    },
+    "2018-09-01": {
+      "baseline_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "55ac7b98aee0a719263d57874367b6b18222ae7f1845984297aaa67797810f6b",
+        "scenario_sha256": "254fcb133421c08e2a3e8443198e8605c006cf1b781886f6a2aea1bae0c3afab",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "7694fe0d5024280172972436b3635d7111f569bbb28ed3c5e2d36b3ac244f6fc",
+        "scenario_sha256": "15b201e8bdf099ce8f1deabe0d60fe1d8ea602f1bf1dedb2eed76499b2424558",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": false,
+      "battery_gap_mwh": 0.05844545000000013,
+      "battery_losses_mwh": 0.22018412036011084,
+      "grid_mwh": 19.58358412036011,
+      "measured_mwh": 19.363400000000002,
+      "no_asset_gap_mwh": 2.09656,
+      "peak_mw": 0.49060000000000004,
+      "terminal_soc_mwh": 0.6
+    },
+    "2018-10-01": {
+      "baseline_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "4077218f569937752ecc09ba37b757f00037d847b9c8f2d51314a7fe548b034a",
+        "scenario_sha256": "2d09afa5f8ace39985485c94bb84c7d6f0f681c07531c0c960ee05bef2310d19",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "80d4d3bd913f4d1804432d146fa17c3a33509469772fdff5ee48b40cdf12865d",
+        "scenario_sha256": "82820507fe9cf339c54727c8df7df3281572c1e04b79ec01f6229cec86b747b0",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": true,
+      "battery_gap_mwh": 2.500000000071889e-08,
+      "battery_losses_mwh": 0.12976520505540162,
+      "grid_mwh": 16.421895205055403,
+      "measured_mwh": 16.29213,
+      "no_asset_gap_mwh": 1.2011600000000002,
+      "peak_mw": 0.51464,
+      "terminal_soc_mwh": 0.6
+    },
+    "2018-11-01": {
+      "baseline_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "c1bd9e3e908bec8e1b2f0b7a386611cacf63623dfc25e2c1c21355969236cf37",
+        "scenario_sha256": "392d41dbf05b93149dcaa54d9af2ebd5e0c4c93ce5ecd95510ff2d33b760bdcc",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "a8bd00b5df573a8eb8abc380024421e53beffb53caa48aafed05a73af7cbdfa7",
+        "scenario_sha256": "08ea13310f7ba21b3bf395adca139f4712535ae04789a3724d852e9a66d0384e",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": false,
+      "battery_gap_mwh": 0.009830025000000006,
+      "battery_losses_mwh": 0.280526673199446,
+      "grid_mwh": 19.248166673199446,
+      "measured_mwh": 18.96764,
+      "no_asset_gap_mwh": 2.6065,
+      "peak_mw": 0.48068,
+      "terminal_soc_mwh": 0.6
+    },
+    "2018-12-01": {
+      "baseline_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "cbdcaa033fbc2e7a0c7439a5f1fd7e9e8539877becd6fdbe375de21836ea0af3",
+        "scenario_sha256": "5636aa8232e8373be912c8d104690f5942b6d38a6d1d7e0b68371487adb9b1e8",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_evidence": {
+        "engine_version": "0.3.8",
+        "evidence_type": "modelled_perfect_foresight",
+        "result_sha256": "a477a46057c93b3bf502f0be632f93db9ca4d83ef5cca0dc078e5c81c75687d2",
+        "scenario_sha256": "715ec6922f66b2a2105893a7feeeea771b91c5462b8db6e194c268b00975c189",
+        "scipy_version": "1.18.1",
+        "solver": "scipy.optimize.linprog/HiGHS"
+      },
+      "battery_feasible": true,
+      "battery_gap_mwh": 2.500000000071889e-08,
+      "battery_losses_mwh": 0.12191550976454293,
+      "grid_mwh": 14.785095509764544,
+      "measured_mwh": 14.66318,
+      "no_asset_gap_mwh": 1.1285,
+      "peak_mw": 0.4372,
+      "terminal_soc_mwh": 0.6
+    }
+  }
+}
