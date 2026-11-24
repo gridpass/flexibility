@@ -7,7 +7,7 @@ from mcp.types import ToolAnnotations
 
 from .interface import evaluate_request
 
-Operation = Literal["screen", "dispatch", "compare_designs", "profile", "size", "stress", "causal"]
+Operation = Literal["screen", "dispatch", "compare_designs", "profile", "size", "stress", "causal", "economics"]
 
 def _check_budget(operation, payload):
     # These bounds are specific to the agent adapter, not to engineering CLI use.
@@ -35,6 +35,11 @@ def _check_budget(operation, payload):
         if len(payload["cases"])>32 or len(payload["options"])>16:raise ValueError("Too many cases or capacity options")
         if payload.get("time_limit_s",60)>60:raise ValueError("Agent sizing time limit is 60 seconds")
         work=sum(effort(c["scenario"],len(payload["options"])) for c in payload["cases"])*2
+    elif operation == "economics":
+        alternatives=payload["alternatives"]; sensitivities=payload.get("sensitivities",[])
+        if not 1<=len(alternatives)<=8 or len(sensitivities)>8:raise ValueError("Agent economics case limit exceeded")
+        if payload.get("time_limit_s",60)>60:raise ValueError("Agent economics time limit is 60 seconds")
+        work=sum(effort(a["scenario"]) for a in alternatives)*(1+len(sensitivities))
     elif operation == "causal":
         s=payload["scenario"];steps=len(s["baseline_mw"]);width=payload.get("lookahead_intervals",24)
         if type(width) is not int or not 1<=width<=96 or steps>96:
@@ -54,7 +59,7 @@ def create_server(port=8765):
     def evaluate_flexibility(operation: Operation, payload: dict[str, Any]) -> dict[str, Any]:
         """Evaluate grid flexibility using the open GridPass engine.
 
-        Select screen, dispatch, compare_designs, profile, size, stress or causal.
+        Select screen, dispatch, compare_designs, profile, size, stress, causal or economics.
         Payloads use the documented JSON examples and units (MW, MWh, hours,
         minutes for notice, EUR). Returns feasibility, cost, constraints and
         evidence as supported by the chosen operation. No live asset control.

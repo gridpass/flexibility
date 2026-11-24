@@ -71,3 +71,7 @@ A sampled causal policy now re-plans against observed conditions and announced e
 ## Implementation checkpoint (v0.3.4)
 
 The physical resource model now includes exact sampled single-zone sensible heat balance, renewable generation and curtailment, and aggregate protected-load accounting. The same constraints are used by causal replay and chronological dispatch. See [thermal specification](THERMAL.md) for equations, source dataset candidates, and explicit calibration limits. No measured dataset was fitted or republished in this revision.
+
+## v0.3.5 lifecycle economics
+
+The shared chronological engine now supports an annual peak charge alongside explicit energy/fuel/carbon costs, with transparent component reconciliation. The financial layer compares feasible alternatives using a common real-EUR horizon and explicit connection delays. See [ECONOMICS.md](ECONOMICS.md) and [ACCEPTANCE.md](ACCEPTANCE.md). No site economics or measured validation inferred.

@@ -16,6 +16,7 @@ def main():
     mode.add_argument("--size", action="store_const", const="size", dest="operation", help="Optimize shared capacity across cases")
     mode.add_argument("--stress", action="store_const", const="stress", dest="operation", help="Generate annual commitment stress cases")
     mode.add_argument("--causal", action="store_const", const="causal", dest="operation", help="Replay with only observed state and announced events")
+    mode.add_argument("--economics", action="store_const", const="economics", dest="operation", help="Compare lifecycle costs and connection delays")
     p.set_defaults(operation="screen")
     args = p.parse_args()
     if args.profile_schema:
@@ -33,7 +34,7 @@ def main():
     except (OSError, ValueError, KeyError, TypeError, ImportError) as exc:
         p.error(str(exc))
     print(json.dumps(result, indent=2, allow_nan=False))
-    return 0 if result.get("valid",result.get("status") not in ("solver_failed","replay_failed","infeasible") and result.get("result")!="evaluation_error") else 2
+    return 0 if result.get("valid",result.get("status") not in ("solver_failed","replay_failed","infeasible","evaluation_error") and result.get("result")!="evaluation_error") else 2
 
 if __name__ == "__main__":
     raise SystemExit(main())
