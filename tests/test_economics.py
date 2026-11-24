@@ -198,3 +198,60 @@ class EconomicsTests(unittest.TestCase):
         from gridpass_flexibility.mcp_server import _check_budget
         with self.assertRaisesRegex(ValueError,"60 seconds"):
             _check_budget("economics",request(alternative(),time_limit_s=61))
+
+    def test_repeated_year_cannot_reuse_depleted_initial_battery(self):
+        a=alternative(tariff={"grid_emissions_kg_mwh":0})
+        a["scenario"]["events"]=[{"start":364,"end":365,"cap_mw":0,"notice_minutes":1440}]
+        a["scenario"]["resources"]=[{"id":"b","kind":"battery","power_mw":1,
+            "energy_mwh":24,"initial_mwh":24,"terminal_mwh":0,
+            "charge_efficiency":1,"discharge_efficiency":1}]
+        case=compare_lifecycle(request(a))["cases"][0]
+        row=case["alternatives"][0]
+        self.assertTrue(row["annual"]["feasible"])
+        self.assertFalse(row["annual"]["repeat_boundary"]["pass"])
+        self.assertTrue(row["boundary_validation"]["annual_required"])
+        self.assertFalse(row["eligible"])
+        self.assertIsNone(case["recommended"])
+        self.assertFalse(case["comparison_complete"])
+        other=compare_lifecycle(request(a,alternative(id="other")))["cases"][0]
+        self.assertIsNone(other["recommended"])
+        self.assertTrue(compare_lifecycle(request(a,years=1))["cases"][0]["alternatives"][0]["eligible"])
+
+    def test_commissioning_to_full_year_checks_terminal_state(self):
+        a=alternative(delay_months=6,seasonal_commissioning=True,
+            tariff={"grid_emissions_kg_mwh":0,"monthly_peak_eur_mw":[0]*12})
+        a["scenario"]["events"]=[{"start":364,"end":365,"cap_mw":0,"notice_minutes":1440}]
+        a["scenario"]["resources"]=[{"id":"b","kind":"battery","power_mw":1,
+            "energy_mwh":24,"initial_mwh":24,"terminal_mwh":0,
+            "charge_efficiency":1,"discharge_efficiency":1}]
+        row=compare_lifecycle(request(a))["cases"][0]["alternatives"][0]
+        self.assertTrue(row["commissioning"]["feasible"])
+        self.assertTrue(row["boundary_validation"]["commissioning_required"])
+        self.assertFalse(row["boundary_validation"]["annual_required"])
+        self.assertFalse(row["eligible"])
+
+    def test_boundary_checks_generator_dwell_thermal_and_backlog(self):
+        from gridpass_flexibility.economics import _repeat_boundary
+        scenario={"interval_hours":1,"resources":[
+            {"id":"g","kind":"generator","initial_mw":1,"initial_on":True,
+             "initial_state_hours":3,"minimum_up_hours":3},
+            {"id":"t","kind":"thermal_cooling","initial_temp_c":20},
+            {"id":"w","kind":"workload"}]}
+        schedule={"resources":{"g":{"generation_mw":[0,1],"online":[0,1]},
+            "t":{"temperature_c":[20,21]},"w":{"backlog_mwh":[0,1]}}}
+        r=_repeat_boundary(scenario,schedule)
+        self.assertEqual([c["state"] for c in r["checks"] if not c["pass"]],
+            ["dwell_intervals_remaining","temperature_c","backlog_mwh"])
+        schedule["resources"]={"g":{"generation_mw":[1,1],"online":[1,1]},
+            "t":{"temperature_c":[20,20]},"w":{"backlog_mwh":[0,0]}}
+        self.assertTrue(_repeat_boundary(scenario,schedule)["pass"])
+
+    def test_repeatable_storage_schedule_passes_boundary(self):
+        a=alternative(tariff={"grid_emissions_kg_mwh":0})
+        a["scenario"]["events"]=[{"start":100,"end":101,"cap_mw":0,"notice_minutes":1440}]
+        a["scenario"]["resources"]=[{"id":"b","kind":"battery","power_mw":1,
+            "energy_mwh":24,"initial_mwh":24,"terminal_mwh":24,
+            "charge_efficiency":1,"discharge_efficiency":1}]
+        case=compare_lifecycle(request(a))["cases"][0]
+        self.assertTrue(case["alternatives"][0]["boundary_validation"]["pass"])
+        self.assertEqual(case["recommended"],"standard")
