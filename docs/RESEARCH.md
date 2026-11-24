@@ -55,3 +55,7 @@ Open verification questions: current evaluator access/price/licence, complete of
 ## Implementation checkpoint (2026-11-24, v0.2.0)
 
 The chronological evaluator now uses SciPy/HiGHS with explicit interval balance, storage SOC, generation ramp and fuel budget, deferred work recovery and deadlines, event notice, target MW, cap violations, operating cost, and input/output hashes. A candidate-design comparison ranks feasible additions and reports observed constraint saturation. Independent profiles report incomplete coverage rather than automatically awarding classes. The following gaps remain: robust and stochastic operation, continuous expansion, binary unit commitment, calibrated thermal and workload models, normative classification and field verification, public MCP integration. See [chronological evaluator](CHRONOLOGICAL.md).
+
+## Implementation checkpoint (2026-11-24, v0.3.0)
+
+Continuous battery MW/MWh and generator MW sizing now shares a single design across a finite set of hard-cap scenarios. The chosen capacities are independently replayed through the chronological engine. The commitment test suite generates distributed and clustered annual events and optional resource outages. The official MCP SDK exposes the same six operations as the CLI through a single read-only tool. See [acceptance criteria](ACCEPTANCE.md) for the remaining work. The advanced solver is not yet integrated into the existing public GridPass website/MCP.

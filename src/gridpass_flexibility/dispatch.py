@@ -31,15 +31,13 @@ def _index(x, name, n):
     if type(x) is not int or not 0<=x<=n: raise ValueError(f"Invalid {name}")
     return x
 
-def evaluate(scenario: dict) -> dict:
-    """Return a schedule, constraint violations, cost and reproducible input digest.
+def _build_model(scenario: dict, expansion=None, hard_caps=False):
+    """Build the same sparse physical model for dispatch and capacity planning.
 
-    First minimize import-cap violations, then minimize operating cost at that
-    minimum. Grid import, resource availability and storage recovery are enforced.
+    Expansion resource IDs refer to resources with upper bounds given by their
+    rated capacities. The capacity columns are linked across planning scenarios.
     """
     import numpy as np
-    import scipy
-    from scipy.optimize import linprog
     from scipy.sparse import coo_matrix
     dt=_number(scenario["interval_hours"],"interval_hours",1/3600,24)
     demand=scenario["baseline_mw"]
@@ -62,7 +60,8 @@ def evaluate(scenario: dict) -> dict:
         events.append(event)
         for t in range(start,end): event_at[t]=event;caps[t]=min(caps[t],cap)
 
-    bounds=[]; operating=[]
+    bounds=[]; operating=[]; sizing={}
+    expansion=expansion or {}
     eq_r=[];eq_c=[];eq_v=[];eq_b=[]
     ub_r=[];ub_c=[];ub_v=[];ub_b=[]
     def variable(lo,hi,cost=0):
@@ -74,7 +73,7 @@ def evaluate(scenario: dict) -> dict:
         row=len(bb);bb.append(rhs)
         for col,coef in terms:
             if coef:rr.append(row);cc.append(col);vv.append(coef)
-    grid=series(0,None,[p*dt for p in prices]); gap=series(0,None)
+    grid=series(0,None,[p*dt for p in prices]); gap=series(0,0 if hard_caps else None)
     balance=[[(grid[t],1)] for t in range(n)]
     for t in range(n):constraint([(grid[t],1),(gap[t],-1)],caps[t])
     resources=[]
@@ -91,6 +90,11 @@ def evaluate(scenario: dict) -> dict:
         ready=[event_at[t] is None or event_at[t]["notice_minutes"]+(t-event_at[t]["start"])*dt*60>=response-EPS for t in range(n)]
         available=[p*availability[t]*(1 if ready[t] else 0) for t in range(n)]
         cost=_number(spec.get("variable_cost_eur_mwh",0),name+" cost")
+        option=expansion.get(name)
+        power_col=None
+        if option is not None:
+            power_col=variable(0,p)
+            sizing[(name,"power_mw")]=power_col
         if kind=="generator":
             # Generation can be scheduled outside events for pre-ramp/recovery.
             gen=series(0,available,cost*dt)
@@ -98,8 +102,14 @@ def evaluate(scenario: dict) -> dict:
             initial=_number(spec.get("initial_mw",0),name+" initial output",0,p)
             for t in range(n):
                 prev=[(gen[t-1],-1)] if t else []
-                constraint([(gen[t],1)]+prev,ramp+(initial if not t else 0))
-                constraint([(gen[t],-1)]+[(i,-v) for i,v in prev],ramp-(initial if not t else 0))
+                if power_col is not None:
+                    ramp_ratio=option["ramp_fraction_per_hour"]*dt
+                    constraint([(gen[t],1),(power_col,-availability[t]*int(ready[t]))],0)
+                    constraint([(gen[t],1)]+prev+[(power_col,-ramp_ratio)],0)
+                    constraint([(gen[t],-1)]+[(i,-v) for i,v in prev]+[(power_col,-ramp_ratio)],0)
+                else:
+                    constraint([(gen[t],1)]+prev,ramp+(initial if not t else 0))
+                    constraint([(gen[t],-1)]+[(i,-v) for i,v in prev],ramp-(initial if not t else 0))
                 balance[t].append((gen[t],1))
             if "fuel_budget_mwh" in spec: constraint([(i,dt) for i in gen],_number(spec["fuel_budget_mwh"],name+" fuel budget"))
             resources.append((name,kind,{"generation_mw":gen}))
@@ -113,14 +123,30 @@ def evaluate(scenario: dict) -> dict:
             charge_p=_number(spec.get("charge_power_mw",p),name+" charge power")
             charge=series(0,[charge_p*a for a in availability],[EPS*dt]*n)
             discharge=series(0,available,(cost+EPS)*dt)
-            soc=[variable(reserve,energy) for _ in range(n)]
+            energy_col=None
+            if option is not None:
+                energy_col=variable(0,energy)
+                sizing[(name,"energy_mwh")]=energy_col
+            soc=[variable(0 if option is not None else reserve,energy) for _ in range(n)]
             for t in range(n):
                 terms=[(soc[t],1),(charge[t],-eta_c*dt),(discharge[t],dt/eta_d)]
                 if t:terms.append((soc[t-1],-1))
-                constraint(terms,0 if t else initial,True)
-                if charge_p and p:constraint([(charge[t],1/charge_p),(discharge[t],1/p)],1)
+                if option is not None:
+                    if not t:terms.append((energy_col,-option["initial_fraction"]))
+                    constraint(terms,0,True)
+                    constraint([(soc[t],1),(energy_col,-1)],0)
+                    constraint([(soc[t],-1),(energy_col,option["reserve_fraction"])],0)
+                    ratio=option["charge_power_ratio"]
+                    constraint([(charge[t],1),(power_col,-ratio*availability[t])],0)
+                    constraint([(discharge[t],1),(power_col,-availability[t]*int(ready[t]))],0)
+                    constraint([(charge[t],1/ratio),(discharge[t],1),(power_col,-1)],0)
+                else:
+                    constraint(terms,0 if t else initial,True)
+                    if charge_p and p:constraint([(charge[t],1/charge_p),(discharge[t],1/p)],1)
                 balance[t]+=[(charge[t],-1),(discharge[t],1)]
-            constraint([(soc[-1],-1)],-final)
+            if option is not None:
+                constraint([(soc[-1],-1),(energy_col,option["terminal_fraction"])],0)
+            else:constraint([(soc[-1],-1)],-final)
             resources.append((name,kind,{"charge_mw":charge,"discharge_mw":discharge,"soc_mwh":soc}))
         elif kind in ("workload","cooling","flexible_load"):
             # Energy-equivalent shift budget. No lost workloads; deferred energy must
@@ -155,16 +181,33 @@ def evaluate(scenario: dict) -> dict:
         if shed:constraint(shed,demand[t])
         constraint(balance[t],demand[t],True)
     def matrix(r,c,v,b):return coo_matrix((v,(r,c)),shape=(len(b),len(bounds))).tocsc()
-    def solve(objective):
-        return linprog(objective,A_ub=matrix(ub_r,ub_c,ub_v,ub_b),b_ub=np.array(ub_b),
-                       A_eq=matrix(eq_r,eq_c,eq_v,eq_b),b_eq=np.array(eq_b),bounds=bounds,method="highs")
+    return {"bounds":bounds,"operating":np.asarray(operating),"A_ub":matrix(ub_r,ub_c,ub_v,ub_b),
+            "b_ub":np.asarray(ub_b),"A_eq":matrix(eq_r,eq_c,eq_v,eq_b),"b_eq":np.asarray(eq_b),
+            "grid":grid,"gap":gap,"caps":caps,"dt":dt,"n":n,"demand":demand,"prices":prices,
+            "events":events,"resources":resources,"sizing":sizing}
+
+def evaluate(scenario: dict) -> dict:
+    """Minimize import-cap violations, then operating cost at that minimum."""
+    import numpy as np
+    import scipy
+    from scipy.optimize import linprog
+    from scipy.sparse import coo_matrix, vstack
+    m=_build_model(scenario)
+    bounds,operating,grid,gap,caps,dt,n,demand,prices,events,resources=(
+        m[k] for k in ("bounds","operating","grid","gap","caps","dt","n","demand","prices","events","resources"))
+    def solve(objective, violation_limit=None):
+        A_ub,b_ub=m["A_ub"],m["b_ub"]
+        if violation_limit is not None:
+            row=coo_matrix(([dt]*n,([0]*n,gap)),shape=(1,len(bounds))).tocsc()
+            A_ub=vstack([A_ub,row],format="csc")
+            b_ub=np.append(b_ub,violation_limit)
+        return linprog(objective,A_ub=A_ub,b_ub=b_ub,A_eq=m["A_eq"],b_eq=m["b_eq"],bounds=bounds,method="highs")
     priority=np.zeros(len(bounds));priority[gap]=dt
     first=solve(priority)
     evidence={"engine_version":__version__,"solver":"scipy.optimize.linprog/HiGHS","scipy_version":scipy.__version__,
               "scenario_sha256":_digest(scenario),"evidence_type":"modelled_perfect_foresight"}
     if not first.success:return {"status":"solver_failed","solver_status":int(first.status),"message":first.message,"evidence":evidence}
-    constraint([(i,dt) for i in gap],max(0,float(first.fun))+EPS)
-    second=solve(np.asarray(operating))
+    second=solve(operating,max(0,float(first.fun))+EPS)
     if not second.success:return {"status":"solver_failed","solver_status":int(second.status),"message":second.message,"evidence":evidence}
     x=second.x
     def vals(indices):return [float(max(0,x[i])) for i in indices]

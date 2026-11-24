@@ -28,7 +28,7 @@ def evaluate_profile(profile, scenarios):
         normal=scenario["normal_import_cap_mw"]
         if not isinstance(normal,list):normal=[normal]*len(baseline)
         qualifying=[e for e in scenario.get("events",[])
-                    if all(min(baseline[t],normal[t])-e["cap_mw"]>=target-1e-8
+                    if e["notice_minutes"]<=notice and all(min(baseline[t],normal[t])-e["cap_mw"]>=target-1e-8
                            for t in range(e["start"],e["end"]))]
         hours=sum((e["end"]-e["start"])*dt for e in qualifying)
         stress=any(e["notice_minutes"]<=notice and (e["end"]-e["start"])*dt>=duration-1e-8 for e in qualifying)

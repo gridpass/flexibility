@@ -13,7 +13,8 @@ git clone https://github.com/gridpass/flexibility.git
 cd flexibility
 PYTHONPATH=src python -m gridpass_flexibility examples/data-centre.json
 PYTHONPATH=src python -m gridpass_flexibility --schema
-PYTHONPATH=src python -m unittest discover -s tests -v
+pip install ".[agent]"
+python -m unittest discover -s tests -v
 ```
 
 Alternatively install locally with `pip install .` and use the `gridpass-flexibility` command.
@@ -29,9 +30,28 @@ pip install ".[optimization]"
 gridpass-flexibility --dispatch examples/chronological.json
 gridpass-flexibility --compare-designs examples/design-comparison.json
 gridpass-flexibility --profile examples/profile-check.json
+gridpass-flexibility --size examples/capacity-sizing.json
+gridpass-flexibility --stress examples/annual-stress.json
 ```
 
 Read the [chronological evaluation specification](docs/CHRONOLOGICAL.md) for assumptions, schema, economics, and evidence boundaries. The example profile check is intentionally incomplete because it does not cover a full year. The implementation does not claim EPRI certification or equivalence to its tool.
+
+## Capacity planning and commitment stress tests
+
+Size battery power, battery energy and generation capacity across several alternative connection scenarios. The optimizer chooses one shared design, minimizes explicitly weighted operating cost plus allocated investment cost, and replays the design in each case. A zero-weight stress case still has to be feasible.
+
+Generate distributed and clustered annual restrictions from a defined commitment. Optionally test whole-horizon resource outages. A passing scenario is not proof of performance under all future event sequences; the model uses independent perfect-foresight schedules.
+
+See [capacity and commitment planning](docs/PLANNING.md) and the example JSON inputs.
+
+## MCP for agents
+
+```sh
+pip install ".[agent]"
+gridpass-flexibility-mcp
+```
+
+The default transport is stdio. The read-only `evaluate_flexibility` tool accepts an operation (`screen`, `dispatch`, `compare_designs`, `profile`, `size`, or `stress`) and the corresponding example JSON payload. For a local HTTP client, run `gridpass-flexibility-mcp --transport streamable-http` and connect to `http://127.0.0.1:8765/mcp`. See [agent integration](docs/MCP.md).
 
 ## Screening model scope
 
@@ -46,7 +66,7 @@ The zero-dependency screening model is not chronological dispatch optimisation, 
 
 ## Roadmap
 
-See [research and implementation scope](docs/RESEARCH.md) and [model details](docs/MODEL.md). The advanced evaluator already reuses SciPy/HiGHS; see the remaining capability gaps in the roadmap.
+See [research and implementation scope](docs/RESEARCH.md) and [model details](docs/MODEL.md). The advanced evaluator reuses SciPy/HiGHS. See [release acceptance criteria](docs/ACCEPTANCE.md) and the remaining issues.
 
 ## GridPass services
 

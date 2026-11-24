@@ -26,7 +26,7 @@ Results include the interval schedule, peak and total unmet reduction, event-lev
 
 ## Design comparisons
 
-Supply a scenario and a list of candidate additions. Each candidate has a unique ID, additional resource objects, and fixed cost allocated to the modeled horizon. The evaluator ranks feasible options by modeled total cost and infeasible options by uncovered energy. This compares explicit candidate designs; it does not yet solve continuous capacity expansion or produce bankable annual economics.
+Supply a scenario and a list of candidate additions. Each candidate has a unique ID, additional resource objects, and fixed cost allocated to the modeled horizon. The evaluator ranks feasible options by modeled total cost and infeasible options by uncovered energy. This compares explicit candidate designs. Use the separate continuous sizing operation for capacity expansion; neither operation produces bankable annual economics without site-specific evidence.
 
 ## Test profiles
 
@@ -36,4 +36,4 @@ Example profiles are independent, editable finite test envelopes, not official E
 
 ## Next engineering steps
 
-Continuous capacity expansion, mixed-integer generation and battery modes, calibrated workload and thermal models, stochastic/robust schedules, explicit alternative event sequences, measured field replay, report export, and the GridPass public MCP/website integration. Keep the zero-dependency screening calculator for quick cases; advanced numerical work runs with an established solver.
+Mixed-integer generation and battery modes, calibrated workload and thermal models, causal stochastic/robust schedules, additional stress event sequences, measured field replay, report export, and the GridPass public MCP/website integration. Keep the zero-dependency screening calculator for quick cases; advanced numerical work runs with an established solver.
