@@ -24,7 +24,7 @@ def _id(v):
         raise ValueError("IDs must be nonempty strings up to 100 characters")
     return v
 
-def _cashflows(annual, a, years, discount, capex_factor, extra_delay, monthly_costs=None):
+def _cashflows(annual, a, years, discount, capex_factor, extra_delay, monthly_costs=None, commissioning_cost=None):
     capex=_number(a["capex_eur"],"initial capital expenditure",0,1e12)*capex_factor
     delay=_number(a["delay_months"],"connection delay",0,1200)+extra_delay
     seasonal=a.get("seasonal_commissioning",False)
@@ -53,7 +53,8 @@ def _cashflows(annual, a, years, discount, capex_factor, extra_delay, monthly_co
         operating=fraction*annual
         if seasonal and monthly_costs is not None:
             first_month=int(max(0,min(12,delay-(y-1)*12)))
-            operating=sum(monthly_costs[first_month:])
+            operating=(commissioning_cost if 0<first_month<12 and commissioning_cost is not None
+                       else sum(monthly_costs[first_month:]))
         net=fraction*(margin-fixed)-operating-replacement.get(y,0)+terminal
         flows.append({"year":y,"service_fraction":fraction,
                       "contribution_eur":fraction*margin,"fixed_opex_eur":fraction*fixed,
@@ -84,7 +85,27 @@ def _monthly_periods(tariff, dt, n):
         periods.append((start,end,_number(rate,"monthly peak tariff")))
     return periods
 
-def _annual(a, modifiers, deadline):
+def _commissioning_slice(scenario, start, dt):
+    """Start with declared plant state; never borrow pre-service energy or notice."""
+    from .thermal import SERIES_FIELDS
+    for key in ("baseline_mw", "normal_import_cap_mw", "price_eur_mwh", "protected_load_mw"):
+        if isinstance(scenario.get(key), list):
+            scenario[key] = scenario[key][start:]
+    events=[]
+    for event in scenario.get("events", []):
+        if event["end"]<=start:
+            continue
+        first=max(start,event["start"])
+        events.append({**event, "start":first-start, "end":event["end"]-start,
+                       "notice_minutes":min(event["notice_minutes"],(first-start)*dt*60)})
+    scenario["events"]=events
+    for spec in scenario.get("resources", []):
+        for key in ("availability", *SERIES_FIELDS):
+            if isinstance(spec.get(key),list):
+                spec[key]=spec[key][start:]
+    return scenario
+
+def _annual(a, modifiers, deadline, start_month=0):
     scenario=deepcopy(a["scenario"])
     n=len(scenario["baseline_mw"]);dt=_number(scenario["interval_hours"],"interval hours",1/3600,24)
     if abs(n*dt-8760)>1e-6:raise ValueError("Economics requires a complete 8760-hour operating year")
@@ -113,6 +134,13 @@ def _annual(a, modifiers, deadline):
         # The unmodified generator variable cost is nonfuel, noncarbon variable O&M.
         r["variable_cost_eur_mwh"]=_number(r.get("variable_cost_eur_mwh",0),"nonfuel variable cost")+(price+carbon*ef/1000)/eta
         factors[r["id"]]=(eta,price,ef)
+    if start_month:
+        start=monthly[start_month][0]
+        # Full-year solve validates the original arrays and event windows first.
+        scenario=_commissioning_slice(scenario,start,dt)
+        energy_price=energy_price[start:]
+        grid_ef=grid_ef[start:]
+        monthly=[(lo-start,hi-start,rate) for lo,hi,rate in monthly[start_month:]]
     if monotonic()>=deadline:
         return {"dispatch_status":"solver_failed","feasible":False,"message":"Economics time budget exhausted",
                 "evidence":{"engine_version":__version__,"scenario_sha256":_digest(scenario)}}
@@ -130,7 +158,7 @@ def _annual(a, modifiers, deadline):
         fuel_mwh+=consumed;fuel_cost+=consumed*price;fuel_emissions+=consumed*ef/1000
     carbon_cost=carbon*(grid_emissions+fuel_emissions)
     monthly_rows=[{"month":i+1,"peak_import_mw":max(grid[start:end]),"rate_eur_mw":rate,
-                   "cost_eur":max(grid[start:end])*rate} for i,(start,end,rate) in enumerate(monthly)]
+                   "cost_eur":max(grid[start:end])*rate} for i,(start,end,rate) in enumerate(monthly,start=start_month)]
     peak_cost=peak*peak_price+sum(row["cost_eur"] for row in monthly_rows)
     operating=solved["operating_cost_eur"]
     # Independently reconstruct operating costs from the *original* nonfuel
@@ -150,8 +178,7 @@ def _annual(a, modifiers, deadline):
                   uncovered_mwh=solved["uncovered_mwh"])
     if monthly:result["monthly_peak_tariffs"]=monthly_rows
     if a.get("seasonal_commissioning",False):
-        # Allocate the *same annual optimized schedule*, without inventing a
-        # commissioning state for storage, thermal or committed resources.
+        # Independently reconcile each active month of this solved horizon.
         month_costs=[]
         for row,(start,end,_) in zip(monthly_rows,monthly):
             ix=slice(start,end)
@@ -200,8 +227,20 @@ def compare_lifecycle(payload):
             row={"id":a["id"],"annual":annual,"eligible":False}
             if annual["dispatch_status"]=="solved":
                 finance=_cashflows(annual["annual_operating_cost_eur"],a,years,discount,case["capex_multiplier"],case["extra_delay_months"],annual.get("monthly_operating_cost_eur"))
+                delay=finance["delay_months"]
+                partial=None
+                if a.get("seasonal_commissioning",False) and delay<years*12 and delay%12:
+                    month=int(delay%12)
+                    partial=_annual(a,case,deadline,start_month=month)
+                    row["commissioning"]={**partial,"first_service_month":month+1}
+                    if "annual_operating_cost_eur" in partial:
+                        row["commissioning"]["operating_cost_eur"]=row["commissioning"].pop("annual_operating_cost_eur")
+                    if partial["dispatch_status"]!="solved":
+                        rows.append(row)
+                        continue
+                    finance=_cashflows(annual["annual_operating_cost_eur"],a,years,discount,case["capex_multiplier"],case["extra_delay_months"],annual.get("monthly_operating_cost_eur"),partial["annual_operating_cost_eur"])
                 row["finance"]=finance
-                row["eligible"]=annual["feasible"] and finance["discounted_service_years"]>0
+                row["eligible"]=annual["feasible"] and finance["discounted_service_years"]>0 and (partial is None or partial["feasible"])
             else:
                 # Validate financial inputs even if the solver fails.
                 _cashflows(0,a,years,discount,case["capex_multiplier"],case["extra_delay_months"])
@@ -212,10 +251,10 @@ def compare_lifecycle(payload):
             row["incremental_npv_eur"]=(row["finance"]["npv_eur"]-reference_row["finance"]["npv_eur"]
                                          if row["eligible"] and reference_row["eligible"] else None)
         ranked=sorted((r for r in rows if r["eligible"]),key=lambda r:(-r["finance"]["npv_eur"],r["id"]))
-        complete=all(r["annual"]["dispatch_status"]=="solved" for r in rows)
+        complete=all(r["annual"]["dispatch_status"]=="solved" and r.get("commissioning",{}).get("dispatch_status","solved")=="solved" for r in rows)
         results.append({"id":case["id"],"assumptions":case,"alternatives":rows,
                         "comparison_complete":complete,"recommended":ranked[0]["id"] if complete and ranked else None})
-    result={"status":"solved" if all(r["annual"]["dispatch_status"]=="solved" for c in results for r in c["alternatives"]) else "evaluation_error",
+    result={"status":"solved" if all(c["comparison_complete"] for c in results) else "evaluation_error",
             "years":years,"real_discount_rate":discount,"reference_id":reference,"cases":results,
             "evidence":{"engine_version":__version__,"input_sha256":_digest(payload),"evidence_type":"modeled_lifecycle_economics"},
             "limitations":"One supplied operating year repeated in real EUR; fractional service years prorate all annual costs and contribution, including peak tariff. Capex at year zero, cashflows at year end. No tax, financing, degradation, escalation, outage probabilities or external certification. Annual peak tariff is a single site maximum, not monthly demand billing. Emissions factors and contribution are user assumptions, not forecasts. Perfect-foresight dispatch."}
@@ -223,6 +262,6 @@ def compare_lifecycle(payload):
         result["limitations"]=result["limitations"].replace("Annual peak tariff is a single site maximum, not monthly demand billing.", "Monthly peak tariff uses sampled maxima in a non-leap Jan–Dec year.")
     if any(a.get("seasonal_commissioning",False) for a in alternatives):
         result["limitations"]=result["limitations"].replace("fractional service years prorate all annual costs and contribution, including peak tariff.", "nonseasonal alternatives prorate all annual costs and contribution, including peak tariff.")
-        result["limitations"]+=" Seasonal alternatives assume January project start and allocate operating costs from active calendar months of the optimized annual schedule; contribution and fixed costs remain prorated. Initial plant state at commissioning and partial-year redispatch are not validated."
+        result["limitations"]+=" Seasonal alternatives assume January project start and independently redispatch the first partial year from the declared scenario initial conditions and zero workload backlog, without pre-service notice or energy. Full years repeat the annual schedule; continuity between years, pre-service commissioning energy and actual plant state are not validated. Generator fuel budget is the declared available amount per solve. Contribution and fixed costs remain prorated."
     result["evidence"]["result_sha256"]=_digest(result)
     return result
