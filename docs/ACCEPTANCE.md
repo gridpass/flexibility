@@ -132,3 +132,9 @@ Do not mark a gate complete based on documentation alone. Keep issues #1–5 cur
 ## Consolidated v0.3.9 release candidate
 
 - Collects the monthly tariff, seasonal commissioning, state-boundary, numerical validation and offline calibration changes above. The opt-in hosted probe adds the synthetic July commissioning case: the annual trace is feasible but the opening-day restriction leaves 24 MWh uncovered and must prevent a recommendation. Deployment and live parity are not assumed by this version bump.
+
+## Verified in production on 2026-11-24 (v0.3.9)
+
+- Tagged commit 3af96dc; 150 installed-package tests and Python 3.10/3.12 PR, branch, main and tag CI passed. Existing isolated service upgraded with pinned NumPy 2.5.5 and SciPy 1.18.1; no new infrastructure or gateway changes.
+- All eight canonical operations and the new July commissioning case matched exactly as JSON across public browser API, MCP and local engine. The latter independently asserts full-year feasibility, 24 MWh uncovered at commissioning, and no eligible recommendation. Initial smoke comparison found Python tuple versus wire JSON array representations of peak periods; deployment was rolled back, the probe corrected to compare strict JSON, then redeployed and verified. No numerical or evidence-hash mismatch remained.
+- Calculator HTTP 200, invalid advanced input 422, consent rejection and unauthenticated upstream 401; service active, loopback-only, DynamicUser, 2 GiB memory, one CPU. No sustained-load, external security audit, field validation or official equivalence claim. Independently testable remaining work includes nonmatching inter-year reoptimization and explicit usability/schema checks; site-specific commissioning, protection/fallback settings and measured plant acceptance are external inputs.
