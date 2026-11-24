@@ -7,6 +7,7 @@ This is deliberately opt-in, not a CI test against the live service.
 """
 from __future__ import annotations
 import argparse
+from copy import deepcopy
 import json
 import urllib.error
 import urllib.request
@@ -38,15 +39,48 @@ def release_cases():
         "capex_eur":100000,"delay_months":6,"seasonal_commissioning":True,
         "annual_contribution_eur":2000000,"annual_fixed_opex_eur":10000,
         "tariff":{"grid_emissions_kg_mwh":0,"monthly_peak_eur_mw":[0]*12}}
-    return {"commissioning": ("economics", {"years":2,"real_discount_rate":.1,
-                                               "alternatives":[a]})}
+    b = deepcopy(a)
+    b.update(id="interyear", delay_months=0, seasonal_commissioning=False,
+             interyear_reoptimization=True, tariff={"grid_emissions_kg_mwh":0})
+    b["scenario"]["events"][0].update(start=364, end=365)
+    b["scenario"]["resources"][0]["initial_mwh"] = 24
+    c = deepcopy(b)
+    c["scenario"]["normal_import_cap_mw"] = 1
+    return {name: ("economics", {"years":2,"real_discount_rate":.1,
+                                 "alternatives":[alternative]})
+            for name, alternative in [("commissioning", a), ("interyear", b),
+                                      ("interyear_infeasible", c)]}
+
+
+def assert_release_case(name, expected):
+    if name not in ("commissioning", "interyear", "interyear_infeasible"):
+        return
+    case = expected["cases"][0]
+    row = case["alternatives"][0]
+    if name == "commissioning":
+        if (not row["annual"]["feasible"] or row["commissioning"]["feasible"]
+                or abs(row["commissioning"]["uncovered_mwh"] - 24) > 1e-5
+                or row["eligible"] or case["recommended"] is not None):
+            raise RuntimeError("Commissioning fixture failed independent acceptance assertions")
+        return
+    first, second = row["operating_years"]
+    if (first["next_initial_state"]["b"]["initial_mwh"] != 0 or
+            second["carried_initial_state"] != first["next_initial_state"]):
+        raise RuntimeError("Inter-year state continuity failed")
+    if name == "interyear":
+        if (not row["eligible"] or case["recommended"] != "interyear" or
+                abs(second["annual_operating_cost_eur"] - first["annual_operating_cost_eur"] - 2400) > 1e-5):
+            raise RuntimeError("Inter-year recharge cost acceptance failed")
+    elif (row["eligible"] or case["recommended"] is not None or
+          abs(second["uncovered_mwh"] - 24) > 1e-5):
+        raise RuntimeError("Inter-year infeasibility acceptance failed")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", default="https://gridpass.co")
     parser.add_argument("--operation", choices=tuple(CASES), action="append")
-    parser.add_argument("--release-cases", action="store_true", help="Also probe monthly tariff and commissioning behavior")
+    parser.add_argument("--release-cases", action="store_true", help="Also probe commissioning and inter-year state continuity")
     args = parser.parse_args()
     base = args.base.rstrip("/")
     headers = {"Origin": base, "Content-Type": "application/json",
@@ -86,12 +120,7 @@ def main():
         # Compare JSON values, not Python-only container types (e.g. tariff tuples).
         validate_evaluation("request", op, payload)
         expected = json.loads(json.dumps(evaluate_request(op, payload), allow_nan=False))
-        if name == "commissioning":
-            row = expected["cases"][0]["alternatives"][0]
-            if (not row["annual"]["feasible"] or row["commissioning"]["feasible"]
-                    or abs(row["commissioning"]["uncovered_mwh"] - 24) > 1e-5
-                    or row["eligible"] or expected["cases"][0]["recommended"] is not None):
-                raise RuntimeError("Commissioning fixture failed independent acceptance assertions")
+        assert_release_case(name, expected)
         envelope = {"operation": op, "payload": payload}
         status, browser = post("/api/flexibility/evaluate", envelope)
         if status != 200:

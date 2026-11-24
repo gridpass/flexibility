@@ -149,3 +149,7 @@ Do not mark a gate complete based on documentation alone. Keep issues #1–5 cur
 - Opt-in lifecycle mode carries battery SOC, zone temperature, generator output/commitment age and original terminal targets into the next active year using the same dispatch solver. Workload backlog must close each year; fuel replenishment is explicit. Actual service-year costs feed NPV, including calendar commissioning. Shared time budget and hosted complexity bounds account for repeated solves.
 - Analytic daily case: a 24 MWh battery ends year one empty; the following year incurs EUR 2,400 additional recharge cost at EUR 100/MWh and passes. Removing recharge headroom leaves 24 MWh uncovered and excludes the design. July commissioning carries the actual empty terminal battery into the next year. State extraction, failed second solve, request/response schema and budget tests included.
 - This is sequential yearly redispatch, not joint multi-year optimization, a causal policy, or field calibration. No production deployment claimed.
+
+## Consolidated v0.3.10 release candidate
+
+- Packages interface conformance and sequential annual redispatch with the existing solver and unchanged eight-operation gateway. The opt-in hosted probe adds both a feasible carried-state recharge-cost case and a no-headroom case that must reject the recommendation. Local acceptance tests exercise the probes and reject a corrupted cost. Deployment and live parity are not implied by this version bump.
