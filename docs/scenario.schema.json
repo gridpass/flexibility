@@ -1,0 +1,141 @@
+{
+  "type": "object",
+  "properties": {
+    "load": {
+      "type": "number",
+      "description": "Site demand (MW)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "limit": {
+      "type": "number",
+      "description": "Event grid import limit (MW)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "notice": {
+      "type": "number",
+      "description": "Advance notice (minutes)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "duration": {
+      "type": "number",
+      "description": "Event duration (hours)",
+      "minimum": 0.01,
+      "maximum": 1000000
+    },
+    "events": {
+      "type": "integer",
+      "description": "Events per year (integer)",
+      "minimum": 1,
+      "maximum": 1000000
+    },
+    "recovery": {
+      "type": "number",
+      "description": "Minimum recovery (hours)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "flex": {
+      "type": "number",
+      "description": "Approved load reduction (MW)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "flexNotice": {
+      "type": "number",
+      "description": "Load preparation time (minutes)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "flexDuration": {
+      "type": "number",
+      "description": "Sustained load reduction duration (hours)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "flexCost": {
+      "type": "number",
+      "description": "Load reduction cost (EUR/MWh)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "gen": {
+      "type": "number",
+      "description": "Available on-site generation (MW)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "genNotice": {
+      "type": "number",
+      "description": "Generation start and ramp time (minutes)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "genDuration": {
+      "type": "number",
+      "description": "Permitted generation duration (hours)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "genCost": {
+      "type": "number",
+      "description": "Generation variable cost (EUR/MWh)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "battery": {
+      "type": "number",
+      "description": "Battery charge/discharge power (MW)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "energy": {
+      "type": "number",
+      "description": "Usable discharge energy (MWh)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "recharge": {
+      "type": "number",
+      "description": "Spare grid recharge power (MW)",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "efficiency": {
+      "type": "number",
+      "description": "Round-trip efficiency (percent)",
+      "minimum": 1,
+      "maximum": 100
+    },
+    "electricity": {
+      "type": "number",
+      "description": "Recharge electricity cost (EUR/MWh)",
+      "minimum": 0,
+      "maximum": 1000000
+    }
+  },
+  "required": [
+    "load",
+    "limit",
+    "notice",
+    "duration",
+    "events",
+    "recovery",
+    "flex",
+    "flexNotice",
+    "flexDuration",
+    "flexCost",
+    "gen",
+    "genNotice",
+    "genDuration",
+    "genCost",
+    "battery",
+    "energy",
+    "recharge",
+    "efficiency",
+    "electricity"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gridpass-flexibility"
+version = "0.1.0"
+description = "Independent open-source screening for large-load grid flexibility"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [{name = "GridPass contributors"}]
+dependencies = []
+readme = "README.md"
+
+[project.urls]
+Homepage = "https://gridpass.co/"
+Repository = "https://github.com/gridpass/flexibility"
+
+[project.scripts]
+gridpass-flexibility = "gridpass_flexibility.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

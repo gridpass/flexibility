@@ -1,0 +1,21 @@
+{
+  "load": 20,
+  "limit": 15,
+  "notice": 60,
+  "duration": 4,
+  "events": 50,
+  "recovery": 12,
+  "flex": 1.5,
+  "flexNotice": 10,
+  "flexDuration": 4,
+  "flexCost": 80,
+  "gen": 2,
+  "genNotice": 30,
+  "genDuration": 12,
+  "genCost": 160,
+  "battery": 3,
+  "energy": 8,
+  "recharge": 2,
+  "efficiency": 90,
+  "electricity": 100
+}
