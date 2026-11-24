@@ -7,6 +7,7 @@ from __future__ import annotations
 from copy import deepcopy
 from .dispatch import _build_model, _digest, _number, evaluate
 from . import __version__
+from .validation import checked_solution
 
 def _option(raw):
     o=deepcopy(raw)
@@ -94,6 +95,7 @@ def size_capacity(cases, options, time_limit_s=60):
     ub_rhs=np.concatenate([m["b_ub"] for m in models])
     sol=linprog(np.asarray(objective),A_ub=ub,b_ub=ub_rhs,A_eq=eq,b_eq=eq_rhs,bounds=bounds,method="highs",
                 options={"time_limit":time_limit})
+    sol=checked_solution(sol,bounds,eq,eq_rhs,ub,ub_rhs)
     evidence={"engine_version":__version__,"solver":"scipy.optimize.linprog/HiGHS","scipy_version":scipy.__version__,
               "input_sha256":_digest({"cases":cases,"options":options}),"evidence_type":"finite_scenario_capacity_planning"}
     if not sol.success:
