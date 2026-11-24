@@ -1,0 +1,4 @@
+# Python 3.10, amd64, glibc >= 2.34. Re-review security and licenses on updates.
+cryptography==46.0.7 --hash=sha256:35719dc79d4730d30f1c2b6474bd6acda36ae2dfae1e3c16f2051f215df33ce0
+cffi==2.1.1 --hash=sha256:194cffa889098ced9976c3fc6340305e43f6303657d298da55366907c05c22d6
+pycparser==3.11 --hash=sha256:51d5a8ba2be0bbe440b99d2112604c95bbbc3c2748a64260186c541e1729cd80

@@ -1,0 +1,16 @@
+name: gridpass-guard
+version: '0.1.0'
+summary: GridPass secure grid connection reference demo
+description: |
+  Offline simulator-only reference implementation for authenticated
+  power constraints and signed evidence. No device I/O, network
+  access, daemon, safety certification or production operation.
+base: core22
+architectures: [amd64]
+grade: devel
+confinement: strict
+apps:
+  gridpass-guard:
+    command: bin/replay
+  self-test:
+    command: bin/self-test

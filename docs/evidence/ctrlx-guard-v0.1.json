@@ -1,0 +1,383 @@
+{
+  "checkpoint": {
+    "context": {
+      "contract": {
+        "fallback": {
+          "max_w": 200000,
+          "min_w": 0
+        },
+        "fallback_target_w": 200000,
+        "limits": {
+          "max_w": 1000000,
+          "min_w": -100000
+        },
+        "max_message_age_s": 30,
+        "max_meter_age_s": 2,
+        "site": "synthetic-site-01"
+      },
+      "evidence_key": "public_demo_key_not_a_trust_anchor",
+      "fixture_sha256": "480f6a0b979fea738d7d61b457df201b5965acbd70825a827285eeccc5d85a33",
+      "scope": "synthetic_only"
+    },
+    "count": 15,
+    "head": "bebeb3927ed22186dcc97b093cbdbd2981dbdff0f299d9f8c409dad07224393a",
+    "schema": "gridpass.guard.v0.1"
+  },
+  "records": [
+    {
+      "acknowledged_w": 500000,
+      "allowed_w": 500000,
+      "case": "valid request clipped",
+      "effective_bounds": {
+        "max_w": 500000,
+        "min_w": -50000
+      },
+      "ems_seq": 1,
+      "now_s": 0,
+      "observed_excursion": false,
+      "observed_w": 500000,
+      "policy_seq": 1,
+      "policy_status": "accepted",
+      "pre_meter_w": 500000,
+      "reasons": [],
+      "request_status": "accepted",
+      "requested_w": 750000,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "normal"
+    },
+    {
+      "acknowledged_w": 500000,
+      "allowed_w": 500000,
+      "case": "EMS cannot issue operator policy",
+      "effective_bounds": {
+        "max_w": 500000,
+        "min_w": -50000
+      },
+      "ems_seq": 2,
+      "now_s": 1,
+      "observed_excursion": false,
+      "observed_w": 500000,
+      "policy_seq": 1,
+      "policy_status": "invalid_signature",
+      "pre_meter_w": 500000,
+      "reasons": [],
+      "request_status": "accepted",
+      "requested_w": 900000,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "normal"
+    },
+    {
+      "acknowledged_w": -50000,
+      "allowed_w": -50000,
+      "case": "export bound enforced",
+      "effective_bounds": {
+        "max_w": 500000,
+        "min_w": -50000
+      },
+      "ems_seq": 3,
+      "now_s": 2,
+      "observed_excursion": false,
+      "observed_w": -50000,
+      "policy_seq": 1,
+      "policy_status": "absent",
+      "pre_meter_w": 500000,
+      "reasons": [],
+      "request_status": "accepted",
+      "requested_w": -100000,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "normal"
+    },
+    {
+      "acknowledged_w": 500000,
+      "allowed_w": 500000,
+      "case": "outside static contract",
+      "effective_bounds": {
+        "max_w": 500000,
+        "min_w": -50000
+      },
+      "ems_seq": 4,
+      "now_s": 3,
+      "observed_excursion": false,
+      "observed_w": 500000,
+      "policy_seq": 1,
+      "policy_status": "outside_contract",
+      "pre_meter_w": 500000,
+      "reasons": [],
+      "request_status": "accepted",
+      "requested_w": 700000,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "normal"
+    },
+    {
+      "acknowledged_w": 200000,
+      "allowed_w": 200000,
+      "case": "replay after trusted restart",
+      "effective_bounds": {
+        "max_w": 200000,
+        "min_w": 0
+      },
+      "ems_seq": 4,
+      "now_s": 4,
+      "observed_excursion": false,
+      "observed_w": 200000,
+      "policy_seq": 1,
+      "policy_status": "absent",
+      "pre_meter_w": 500000,
+      "reasons": [
+        "no_authorized_request"
+      ],
+      "request_status": "replay",
+      "requested_w": null,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "fallback"
+    },
+    {
+      "acknowledged_w": 200000,
+      "allowed_w": 200000,
+      "case": "wrong site",
+      "effective_bounds": {
+        "max_w": 200000,
+        "min_w": 0
+      },
+      "ems_seq": 4,
+      "now_s": 5,
+      "observed_excursion": false,
+      "observed_w": 200000,
+      "policy_seq": 1,
+      "policy_status": "absent",
+      "pre_meter_w": 500000,
+      "reasons": [
+        "no_authorized_request"
+      ],
+      "request_status": "wrong_authority_or_audience",
+      "requested_w": null,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "fallback"
+    },
+    {
+      "acknowledged_w": 200000,
+      "allowed_w": 200000,
+      "case": "expired request",
+      "effective_bounds": {
+        "max_w": 200000,
+        "min_w": 0
+      },
+      "ems_seq": 4,
+      "now_s": 6,
+      "observed_excursion": false,
+      "observed_w": 200000,
+      "policy_seq": 1,
+      "policy_status": "absent",
+      "pre_meter_w": 500000,
+      "reasons": [
+        "no_authorized_request"
+      ],
+      "request_status": "stale_or_invalid_time",
+      "requested_w": null,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "fallback"
+    },
+    {
+      "acknowledged_w": 200000,
+      "allowed_w": 200000,
+      "case": "link down",
+      "effective_bounds": {
+        "max_w": 200000,
+        "min_w": 0
+      },
+      "ems_seq": 4,
+      "now_s": 7,
+      "observed_excursion": false,
+      "observed_w": 200000,
+      "policy_seq": 1,
+      "policy_status": "link_down",
+      "pre_meter_w": 500000,
+      "reasons": [
+        "link_down",
+        "no_authorized_request"
+      ],
+      "request_status": "link_down",
+      "requested_w": null,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "fallback"
+    },
+    {
+      "acknowledged_w": 200000,
+      "allowed_w": 200000,
+      "case": "stale pre meter",
+      "effective_bounds": {
+        "max_w": 200000,
+        "min_w": 0
+      },
+      "ems_seq": 5,
+      "now_s": 8,
+      "observed_excursion": false,
+      "observed_w": 200000,
+      "policy_seq": 1,
+      "policy_status": "absent",
+      "pre_meter_w": null,
+      "reasons": [
+        "meter_invalid_or_stale"
+      ],
+      "request_status": "accepted",
+      "requested_w": 400000,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "unverified"
+    },
+    {
+      "acknowledged_w": 650000,
+      "allowed_w": 500000,
+      "case": "insufficient capacity",
+      "effective_bounds": {
+        "max_w": 500000,
+        "min_w": -50000
+      },
+      "ems_seq": 6,
+      "now_s": 9,
+      "observed_excursion": true,
+      "observed_w": 650000,
+      "policy_seq": 1,
+      "policy_status": "absent",
+      "pre_meter_w": 500000,
+      "reasons": [
+        "insufficient_controllable_capacity",
+        "observed_limit_excursion"
+      ],
+      "request_status": "accepted",
+      "requested_w": 750000,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "unverified"
+    },
+    {
+      "acknowledged_w": null,
+      "allowed_w": 500000,
+      "case": "actuator failure",
+      "effective_bounds": {
+        "max_w": 500000,
+        "min_w": -50000
+      },
+      "ems_seq": 7,
+      "now_s": 10,
+      "observed_excursion": true,
+      "observed_w": 750000,
+      "policy_seq": 1,
+      "policy_status": "absent",
+      "pre_meter_w": 500000,
+      "reasons": [
+        "actuator_unacknowledged",
+        "observed_limit_excursion"
+      ],
+      "request_status": "accepted",
+      "requested_w": 750000,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "unverified"
+    },
+    {
+      "acknowledged_w": 400000,
+      "allowed_w": 400000,
+      "case": "missing post meter",
+      "effective_bounds": {
+        "max_w": 500000,
+        "min_w": -50000
+      },
+      "ems_seq": 8,
+      "now_s": 11,
+      "observed_excursion": null,
+      "observed_w": null,
+      "policy_seq": 1,
+      "policy_status": "absent",
+      "pre_meter_w": 500000,
+      "reasons": [
+        "no_valid_post_command_measurement"
+      ],
+      "request_status": "accepted",
+      "requested_w": 400000,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "unverified"
+    },
+    {
+      "acknowledged_w": 200000,
+      "allowed_w": 200000,
+      "case": "expired operator policy",
+      "effective_bounds": {
+        "max_w": 200000,
+        "min_w": 0
+      },
+      "ems_seq": 9,
+      "now_s": 20,
+      "observed_excursion": false,
+      "observed_w": 200000,
+      "policy_seq": 1,
+      "policy_status": "absent",
+      "pre_meter_w": 500000,
+      "reasons": [
+        "no_current_policy"
+      ],
+      "request_status": "accepted",
+      "requested_w": 750000,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "fallback"
+    },
+    {
+      "acknowledged_w": 100000,
+      "allowed_w": 100000,
+      "case": "more restrictive operator policy",
+      "effective_bounds": {
+        "max_w": 100000,
+        "min_w": -50000
+      },
+      "ems_seq": 10,
+      "now_s": 21,
+      "observed_excursion": false,
+      "observed_w": 100000,
+      "policy_seq": 2,
+      "policy_status": "accepted",
+      "pre_meter_w": 500000,
+      "reasons": [],
+      "request_status": "accepted",
+      "requested_w": 500000,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "normal"
+    },
+    {
+      "acknowledged_w": 100000,
+      "allowed_w": 100000,
+      "case": "fallback cannot widen last restriction",
+      "effective_bounds": {
+        "max_w": 100000,
+        "min_w": 0
+      },
+      "ems_seq": 10,
+      "now_s": 22,
+      "observed_excursion": false,
+      "observed_w": 100000,
+      "policy_seq": 2,
+      "policy_status": "link_down",
+      "pre_meter_w": 500000,
+      "reasons": [
+        "link_down",
+        "no_authorized_request"
+      ],
+      "request_status": "link_down",
+      "requested_w": null,
+      "schema": "gridpass.guard.v0.1",
+      "site": "synthetic-site-01",
+      "state": "fallback"
+    }
+  ],
+  "signature": "f1e80468ccbfd7e28c3bea08b945623f0a83988556dad0b23c7b738102206b021ed2169238ae8718903740c8e2a72b3ff6dc38dd524036e4f172d5d0ebc79300"
+}
