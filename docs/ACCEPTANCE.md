@@ -58,6 +58,12 @@ Goal: an independently usable open-source large-load flexibility assessment work
 - The empirical predictor beats persistence in three of four configurations, but fails in the baseline configuration. It is not a calibrated physical thermal model or safe control policy. Source power/time units remain unconfirmed; dispatch uses explicitly hypothetical scales. No raw third-party data are committed.
 - See [measured benchmark](MEASURED.md). Physical calibration with known units and isolated actuator data, workload measurements, real response and independent field evidence remain open.
 
+## Verified locally in v0.3.7 (bounded HTTP evaluation)
+
+- One authenticated loopback HTTP service uses the canonical eight-operation interface and the same complexity guard as MCP. Every accepted evaluation runs in a fresh child process with input/output size, memory, CPU and wall limits; bounded concurrency rejects excess work. Invalid inputs and failures return generic errors with no submitted content.
+- Real child parity for screening, dispatch and sizing; invalid authorization, complexity/size limits, nonfinite JSON, busy/recovery and process timeout tests pass. See [HTTP service specification](HTTP.md).
+- This is a deployable upstream component, not yet a deployed public service. Existing website and public MCP routing, credential provisioning, isolated service deployment and live parity remain open.
+
 ## Remaining release gates
 
 | Gate | Acceptance evidence |
@@ -67,7 +73,7 @@ Goal: an independently usable open-source large-load flexibility assessment work
 | Resource models | Temperature-constrained cooling, protected loads and renewable curtailment implemented; remaining calibrated thermal and workload parameters and real measured traces with clear reuse permissions |
 | Economics | Common real-EUR NPV, investment/fixed costs, replacement, fuel, emissions, single annual peak tariff, connection-delay value and reoptimized sensitivity implemented and analytically checked; remaining real-site assumptions, finer tariff/seasonal resolution, causal evidence |
 | Validation | Closed-form and synthetic full-year 15-minute cases implemented; a small exhaustive commitment cost cross-check is implemented; sampled failure injection and prefix invariance now tested; first normalized measured trace replay and repeatable benchmark artifact implemented; remaining physical-unit trace replay, finer numerical tolerance and independent field response evidence |
-| Hosted parity | Public website and existing MCP use this canonical engine, provide a simple entry point plus advanced operations; authenticated or resource-bounded optimization; live endpoint tests, no customer data leakage |
+| Hosted parity | Authenticated resource-bounded HTTP upstream implemented locally; existing public website/MCP routing, dedicated service deployment, secure credential provisioning and live parity remain open |
 | Usability | Documented examples, versioned request/response schema, clear error states, inspectable schedules, exportable results and limitations |
 
 Do not mark a gate complete based on documentation alone. Keep the five open issues current and close only after tested acceptance evidence. Never claim certification or commercial reuse of third-party restricted software without explicit rights.
