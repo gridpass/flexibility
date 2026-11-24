@@ -128,3 +128,7 @@ Goal: an independently usable open-source large-load flexibility assessment work
 | Usability | Documented examples, versioned request/response schema, clear error states, inspectable schedules, exportable results and limitations |
 
 Do not mark a gate complete based on documentation alone. Keep issues #1–5 current and close only after tested acceptance evidence. Never claim certification or commercial reuse of third-party restricted software without explicit rights.
+
+## Consolidated v0.3.9 release candidate
+
+- Collects the monthly tariff, seasonal commissioning, state-boundary, numerical validation and offline calibration changes above. The opt-in hosted probe adds the synthetic July commissioning case: the annual trace is feasible but the opening-day restriction leaves 24 MWh uncovered and must prevent a recommendation. Deployment and live parity are not assumed by this version bump.
