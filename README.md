@@ -48,6 +48,10 @@ The zero-dependency screening model is not chronological dispatch optimisation, 
 
 See [research and implementation scope](docs/RESEARCH.md) and [model details](docs/MODEL.md). The advanced evaluator already reuses SciPy/HiGHS; see the remaining capability gaps in the roadmap.
 
+## Secure grid connections (proposal)
+
+See the [GridPass Guard specification and release gates](docs/SECURE_GRID_CONNECTIONS.md) for the proposed independent site-side enforcement and evidence layer. The current evaluator remains an offline planning tool; no live-control or certification claim is made.
+
 ## GridPass services
 
 Use the [free hosted calculator](https://gridpass.co/tools/flexibility-assessment/) or [agent interface](https://gridpass.co/agents/). The open model is intended to remain inspectable and independently runnable; paid site engineering, integrations, validated studies and operational support are separate services.
