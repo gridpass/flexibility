@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from gridpass_flexibility.interface import evaluate_request
+from gridpass_flexibility.interface_schema import validate_evaluation
 from gridpass_flexibility.screening import FIELDS
 
 BASE={k:v for k,(_,v) in FIELDS.items()}
@@ -26,16 +27,23 @@ class AgentTests(unittest.IsolatedAsyncioTestCase):
         from mcp import ClientSession, StdioServerParameters
         from mcp.client.stdio import stdio_client
         server=StdioServerParameters(command=sys.executable,args=["-m","gridpass_flexibility.mcp_server"])
-        with anyio.fail_after(30):
+        with anyio.fail_after(60):
             async with stdio_client(server) as (read,write):
                 async with ClientSession(read,write) as client:
                     await client.initialize()
                     tools=await client.list_tools()
                     self.assertEqual([t.name for t in tools.tools],["evaluate_flexibility"])
-                    for operation,payload in [("screen",BASE),("dispatch",json.loads((EXAMPLES/"chronological.json").read_text())),("causal",json.loads((EXAMPLES/"causal-replay.json").read_text())),("dispatch",json.loads((EXAMPLES/"thermal-dispatch.json").read_text())),("economics",json.loads((EXAMPLES/"lifecycle-economics.json").read_text()))]:
+                    examples={"dispatch":"chronological.json", "compare_designs":"design-comparison.json",
+                              "profile":"profile-check.json", "size":"capacity-sizing.json", "stress":"annual-stress.json",
+                              "causal":"causal-replay.json", "economics":"lifecycle-economics.json"}
+                    cases=[("screen",BASE), *((op,json.loads((EXAMPLES/file).read_text())) for op,file in examples.items()),
+                           ("dispatch",json.loads((EXAMPLES/"thermal-dispatch.json").read_text()))]
+                    for operation,payload in cases:
+                        validate_evaluation("request",operation,payload)
                         result=await client.call_tool("evaluate_flexibility",{"operation":operation,"payload":payload})
                         self.assertFalse(result.isError)
-                        self.assertEqual(result.structuredContent,evaluate_request(operation,payload))
+                        validate_evaluation("response",operation,result.structuredContent)
+                        self.assertEqual(result.structuredContent,json.loads(json.dumps(evaluate_request(operation,payload),allow_nan=False)))
                     invalid=await client.call_tool("evaluate_flexibility",{"operation":"unknown","payload":{}})
                     self.assertTrue(invalid.isError)
 

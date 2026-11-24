@@ -1,0 +1,1629 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:gridpass:flexibility:evaluation-request:v1",
+  "title": "GridPass evaluation request v1",
+  "description": "Structural contract; cross-field physical and hosted budget checks remain in the engine.",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "screen"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "load": {
+              "type": "number",
+              "description": "Site demand (MW)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "limit": {
+              "type": "number",
+              "description": "Event grid import limit (MW)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "notice": {
+              "type": "number",
+              "description": "Advance notice (minutes)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "duration": {
+              "type": "number",
+              "description": "Event duration (hours)",
+              "minimum": 0.01,
+              "maximum": 1000000
+            },
+            "events": {
+              "type": "integer",
+              "description": "Events per year (integer)",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "recovery": {
+              "type": "number",
+              "description": "Minimum recovery (hours)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "flex": {
+              "type": "number",
+              "description": "Approved load reduction (MW)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "flexNotice": {
+              "type": "number",
+              "description": "Load preparation time (minutes)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "flexDuration": {
+              "type": "number",
+              "description": "Sustained load reduction duration (hours)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "flexCost": {
+              "type": "number",
+              "description": "Load reduction cost (EUR/MWh)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "gen": {
+              "type": "number",
+              "description": "Available on-site generation (MW)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "genNotice": {
+              "type": "number",
+              "description": "Generation start and ramp time (minutes)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "genDuration": {
+              "type": "number",
+              "description": "Permitted generation duration (hours)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "genCost": {
+              "type": "number",
+              "description": "Generation variable cost (EUR/MWh)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "battery": {
+              "type": "number",
+              "description": "Battery charge/discharge power (MW)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "energy": {
+              "type": "number",
+              "description": "Usable discharge energy (MWh)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "recharge": {
+              "type": "number",
+              "description": "Spare grid recharge power (MW)",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "efficiency": {
+              "type": "number",
+              "description": "Round-trip efficiency (percent)",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "electricity": {
+              "type": "number",
+              "description": "Recharge electricity cost (EUR/MWh)",
+              "minimum": 0,
+              "maximum": 1000000
+            }
+          },
+          "required": [
+            "load",
+            "limit",
+            "notice",
+            "duration",
+            "events",
+            "recovery",
+            "flex",
+            "flexNotice",
+            "flexDuration",
+            "flexCost",
+            "gen",
+            "genNotice",
+            "genDuration",
+            "genCost",
+            "battery",
+            "energy",
+            "recharge",
+            "efficiency",
+            "electricity"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "dispatch"
+        },
+        "payload": {
+          "$ref": "#/$defs/scenario"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "compare_designs"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "scenario": {
+              "$ref": "#/$defs/scenario"
+            },
+            "designs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "resources": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/resource"
+                    },
+                    "minItems": 0,
+                    "maxItems": 64
+                  },
+                  "fixed_cost_eur": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100000000.0
+                  }
+                },
+                "required": [
+                  "id",
+                  "resources",
+                  "fixed_cost_eur"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 0
+            }
+          },
+          "required": [
+            "scenario",
+            "designs"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "profile"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "profile": {
+              "$ref": "#/$defs/profile"
+            },
+            "scenarios": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/scenario"
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "profile",
+            "scenarios"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "size"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "cases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "scenario": {
+                    "$ref": "#/$defs/scenario"
+                  },
+                  "weight": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000.0
+                  },
+                  "new_resource_availability": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "oneOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "minItems": 1,
+                          "maxItems": 35040
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "scenario"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 32
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "max_power_mw": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      },
+                      "cost_eur_per_mw": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      },
+                      "response_minutes": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      },
+                      "variable_cost_eur_mwh": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      },
+                      "discrete": {
+                        "const": false
+                      },
+                      "kind": {
+                        "const": "battery"
+                      },
+                      "max_energy_mwh": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      },
+                      "cost_eur_per_mwh": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      },
+                      "charge_power_ratio": {
+                        "type": "number",
+                        "minimum": 0.001,
+                        "maximum": 10
+                      },
+                      "reserve_fraction": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "initial_fraction": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "terminal_fraction": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "charge_efficiency": {
+                        "type": "number",
+                        "minimum": 0.01,
+                        "maximum": 1
+                      },
+                      "discharge_efficiency": {
+                        "type": "number",
+                        "minimum": 0.01,
+                        "maximum": 1
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "kind",
+                      "max_power_mw",
+                      "cost_eur_per_mw",
+                      "max_energy_mwh",
+                      "cost_eur_per_mwh"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "max_power_mw": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      },
+                      "cost_eur_per_mw": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      },
+                      "response_minutes": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      },
+                      "variable_cost_eur_mwh": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      },
+                      "discrete": {
+                        "const": false
+                      },
+                      "kind": {
+                        "const": "generator"
+                      },
+                      "ramp_fraction_per_hour": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      },
+                      "fuel_budget_mwh": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "kind",
+                      "max_power_mw",
+                      "cost_eur_per_mw"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "minItems": 1,
+              "maxItems": 16
+            },
+            "time_limit_s": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 600
+            }
+          },
+          "required": [
+            "cases",
+            "options"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "stress"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "site": {
+              "$ref": "#/$defs/scenario"
+            },
+            "profile": {
+              "$ref": "#/$defs/profile"
+            },
+            "outage_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 0
+            }
+          },
+          "required": [
+            "site",
+            "profile"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "causal"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "scenario": {
+              "$ref": "#/$defs/scenario"
+            },
+            "lookahead_intervals": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 96
+            },
+            "time_limit_s": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 600
+            }
+          },
+          "required": [
+            "scenario"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "economics"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "years": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "real_discount_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "alternatives": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "scenario": {
+                    "$ref": "#/$defs/scenario"
+                  },
+                  "capex_eur": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000000.0
+                  },
+                  "annual_fixed_opex_eur": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000000.0
+                  },
+                  "residual_value_eur": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000000.0
+                  },
+                  "annual_contribution_eur": {
+                    "type": "number",
+                    "minimum": -1000000000000.0,
+                    "maximum": 1000000000000.0
+                  },
+                  "delay_months": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1200
+                  },
+                  "tariff": {
+                    "type": "object",
+                    "properties": {
+                      "grid_emissions_kg_mwh": {
+                        "oneOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100000000.0
+                          },
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 100000000.0
+                            },
+                            "minItems": 1,
+                            "maxItems": 35040
+                          }
+                        ]
+                      },
+                      "carbon_eur_tonne": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      },
+                      "annual_peak_eur_mw": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000000.0
+                      },
+                      "monthly_peak_eur_mw": {
+                        "type": "array",
+                        "items": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100000000.0
+                        },
+                        "minItems": 12,
+                        "maxItems": 12
+                      }
+                    },
+                    "required": [
+                      "grid_emissions_kg_mwh"
+                    ],
+                    "additionalProperties": false,
+                    "not": {
+                      "required": [
+                        "annual_peak_eur_mw",
+                        "monthly_peak_eur_mw"
+                      ]
+                    }
+                  },
+                  "fuel": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "electrical_efficiency": {
+                          "type": "number",
+                          "minimum": 0.01,
+                          "maximum": 1
+                        },
+                        "fuel_eur_mwh": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100000000.0
+                        },
+                        "fuel_emissions_kg_mwh": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100000000.0
+                        }
+                      },
+                      "required": [
+                        "electrical_efficiency",
+                        "fuel_eur_mwh",
+                        "fuel_emissions_kg_mwh"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "replacements": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "year": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 50
+                        },
+                        "cost_eur": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000000.0
+                        }
+                      },
+                      "required": [
+                        "year",
+                        "cost_eur"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 0,
+                    "maxItems": 100
+                  },
+                  "seasonal_commissioning": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "id",
+                  "scenario",
+                  "capex_eur",
+                  "annual_fixed_opex_eur",
+                  "annual_contribution_eur",
+                  "delay_months",
+                  "tariff"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 8
+            },
+            "sensitivities": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "electricity_multiplier": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "fuel_multiplier": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "carbon_multiplier": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "capex_multiplier": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "extra_delay_months": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1200
+                  }
+                },
+                "required": [
+                  "id"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 0,
+              "maxItems": 8
+            },
+            "reference_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "time_limit_s": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 600
+            }
+          },
+          "required": [
+            "years",
+            "real_discount_rate",
+            "alternatives"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "additionalProperties": false
+    }
+  ],
+  "$defs": {
+    "scenario": {
+      "type": "object",
+      "properties": {
+        "interval_hours": {
+          "type": "number",
+          "minimum": 0.0002777777777777778,
+          "maximum": 24
+        },
+        "baseline_mw": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000000.0
+          },
+          "minItems": 1,
+          "maxItems": 35040
+        },
+        "normal_import_cap_mw": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100000000.0
+              },
+              "minItems": 1,
+              "maxItems": 35040
+            }
+          ]
+        },
+        "price_eur_mwh": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100000000.0
+              },
+              "minItems": 1,
+              "maxItems": 35040
+            }
+          ]
+        },
+        "protected_load_mw": {
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100000000.0
+              },
+              "minItems": 1,
+              "maxItems": 35040
+            }
+          ]
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event"
+          },
+          "minItems": 0,
+          "maxItems": 35040
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/resource"
+          },
+          "minItems": 0,
+          "maxItems": 64
+        }
+      },
+      "required": [
+        "interval_hours",
+        "baseline_mw",
+        "normal_import_cap_mw",
+        "price_eur_mwh"
+      ],
+      "additionalProperties": false
+    },
+    "event": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 35040
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 35040
+        },
+        "notice_minutes": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100000000.0
+        },
+        "cap_mw": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100000000.0
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "notice_minutes",
+        "cap_mw"
+      ],
+      "additionalProperties": false
+    },
+    "resource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "power_mw": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "response_minutes": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "availability": {
+              "oneOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "minItems": 1,
+                  "maxItems": 35040
+                }
+              ]
+            },
+            "variable_cost_eur_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "kind": {
+              "const": "battery"
+            },
+            "energy_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "reserve_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "initial_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "terminal_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "charge_power_mw": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "charge_efficiency": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 1
+            },
+            "discharge_efficiency": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 1
+            },
+            "discrete": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "power_mw",
+            "energy_mwh"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "power_mw": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "response_minutes": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "availability": {
+              "oneOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "minItems": 1,
+                  "maxItems": 35040
+                }
+              ]
+            },
+            "variable_cost_eur_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "kind": {
+              "const": "generator"
+            },
+            "initial_mw": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "ramp_mw_per_hour": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "fuel_budget_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "minimum_output_mw": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "startup_cost_eur": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "online_cost_eur_per_hour": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "minimum_up_hours": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 8760
+            },
+            "minimum_down_hours": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 8760
+            },
+            "initial_state_hours": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 8760
+            },
+            "initial_on": {
+              "type": "boolean"
+            },
+            "discrete": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "power_mw"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "power_mw": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "response_minutes": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "availability": {
+              "oneOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "minItems": 1,
+                  "maxItems": 35040
+                }
+              ]
+            },
+            "variable_cost_eur_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "kind": {
+              "const": "renewable"
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "power_mw"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "power_mw": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "response_minutes": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "availability": {
+              "oneOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "minItems": 1,
+                  "maxItems": 35040
+                }
+              ]
+            },
+            "variable_cost_eur_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "kind": {
+              "const": "thermal_cooling"
+            },
+            "thermal_capacitance_mwh_per_k": {
+              "type": "number",
+              "minimum": 1e-06,
+              "maximum": 100000000.0
+            },
+            "thermal_conductance_mw_per_k": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "min_temp_c": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "max_temp_c": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "initial_temp_c": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "terminal_max_temp_c": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "baseline_cooling_mw": {
+              "oneOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100000000.0
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100000000.0
+                  },
+                  "minItems": 1,
+                  "maxItems": 35040
+                }
+              ]
+            },
+            "ambient_c": {
+              "oneOf": [
+                {
+                  "type": "number",
+                  "minimum": -100,
+                  "maximum": 100
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": -100,
+                    "maximum": 100
+                  },
+                  "minItems": 1,
+                  "maxItems": 35040
+                }
+              ]
+            },
+            "heat_gain_mw": {
+              "oneOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100000000.0
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100000000.0
+                  },
+                  "minItems": 1,
+                  "maxItems": 35040
+                }
+              ]
+            },
+            "cop": {
+              "oneOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 100
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0.01,
+                    "maximum": 100
+                  },
+                  "minItems": 1,
+                  "maxItems": 35040
+                }
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "power_mw",
+            "thermal_capacitance_mwh_per_k",
+            "thermal_conductance_mw_per_k",
+            "min_temp_c",
+            "max_temp_c",
+            "initial_temp_c",
+            "baseline_cooling_mw",
+            "ambient_c",
+            "heat_gain_mw",
+            "cop"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "power_mw": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "response_minutes": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "availability": {
+              "oneOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "minItems": 1,
+                  "maxItems": 35040
+                }
+              ]
+            },
+            "variable_cost_eur_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "kind": {
+              "const": "workload"
+            },
+            "shift_budget_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "recovery_power_mw": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "max_delay_hours": {
+              "type": "number",
+              "minimum": 0.0002777777777777778,
+              "maximum": 8760
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "power_mw",
+            "shift_budget_mwh",
+            "max_delay_hours"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "power_mw": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "response_minutes": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "availability": {
+              "oneOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "minItems": 1,
+                  "maxItems": 35040
+                }
+              ]
+            },
+            "variable_cost_eur_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "kind": {
+              "const": "cooling"
+            },
+            "shift_budget_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "recovery_power_mw": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "max_delay_hours": {
+              "type": "number",
+              "minimum": 0.0002777777777777778,
+              "maximum": 8760
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "power_mw",
+            "shift_budget_mwh",
+            "max_delay_hours"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "power_mw": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "response_minutes": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "availability": {
+              "oneOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "minItems": 1,
+                  "maxItems": 35040
+                }
+              ]
+            },
+            "variable_cost_eur_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "kind": {
+              "const": "flexible_load"
+            },
+            "shift_budget_mwh": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "recovery_power_mw": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000000.0
+            },
+            "max_delay_hours": {
+              "type": "number",
+              "minimum": 0.0002777777777777778,
+              "maximum": 8760
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "power_mw",
+            "shift_budget_mwh",
+            "max_delay_hours"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "profile": {
+      "title": "GridPass independent commitment profile v1",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "reduction_mw",
+        "notice_minutes",
+        "activation_hours",
+        "annual_event_hours"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "gridpass-profile-v1",
+          "default": "gridpass-profile-v1"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "reduction_mw": {
+          "type": "number",
+          "minimum": 1e-06,
+          "maximum": 100000000
+        },
+        "notice_minutes": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 525600
+        },
+        "activation_hours": {
+          "type": "number",
+          "minimum": 0.0001,
+          "maximum": 8760
+        },
+        "annual_event_hours": {
+          "type": "number",
+          "minimum": 0.0001,
+          "maximum": 8760
+        },
+        "minimum_recovery_hours": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 8760
+        },
+        "maximum_interval_minutes": {
+          "type": "number",
+          "minimum": 0.016666666666666666,
+          "maximum": 1440
+        }
+      }
+    }
+  }
+}
