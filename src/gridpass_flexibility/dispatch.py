@@ -31,7 +31,7 @@ def _index(x, name, n):
     if type(x) is not int or not 0<=x<=n: raise ValueError(f"Invalid {name}")
     return x
 
-def _build_model(scenario: dict, expansion=None, hard_caps=False, *, causal_state=None, peak_import_cost=0):
+def _build_model(scenario: dict, expansion=None, hard_caps=False, *, causal_state=None, peak_import_cost=0, peak_periods=()):
     """Build the same sparse physical model for dispatch and capacity planning.
 
     Expansion resource IDs refer to resources with upper bounds given by their
@@ -85,6 +85,11 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False, *, causal_stat
     if peak_import_cost:
         peak=variable(0,None,peak_import_cost)
         for t in range(n):constraint([(grid[t],1),(peak,-1)],0)
+    for start,end,rate in peak_periods:
+        if rate:
+            period_peak=variable(0,None,rate)
+            for t in range(start,end):
+                constraint([(grid[t],1),(period_peak,-1)],0)
     resources=[]
     ids=set()
     for spec in scenario.get("resources",[]):
@@ -294,14 +299,14 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False, *, causal_stat
             "grid":grid,"gap":gap,"caps":caps,"dt":dt,"n":n,"demand":demand,"prices":prices,
             "events":events,"resources":resources,"sizing":sizing,"integrality":np.asarray(integer),"recovery_columns":recovery_columns,"fallback_backlog_columns":fallback_backlog_columns}
 
-def evaluate(scenario: dict, *, _causal_state=None, _deadline=None, _peak_import_cost=0) -> dict:
+def evaluate(scenario: dict, *, _causal_state=None, _deadline=None, _peak_import_cost=0, _peak_periods=()) -> dict:
     """Minimize import-cap violations, then operating cost at that minimum."""
     import numpy as np
     import scipy
     from time import monotonic
     from scipy.optimize import linprog, milp, Bounds, LinearConstraint, OptimizeResult
     from scipy.sparse import coo_matrix, vstack
-    m=_build_model(scenario,causal_state=_causal_state,peak_import_cost=_number(_peak_import_cost,"peak import cost"))
+    m=_build_model(scenario,causal_state=_causal_state,peak_import_cost=_number(_peak_import_cost,"peak import cost"),peak_periods=_peak_periods)
     bounds,operating,grid,gap,caps,dt,n,demand,prices,events,resources=(
         m[k] for k in ("bounds","operating","grid","gap","caps","dt","n","demand","prices","events","resources"))
     extra=[]
@@ -324,6 +329,7 @@ def evaluate(scenario: dict, *, _causal_state=None, _deadline=None, _peak_import
     evidence={"engine_version":__version__,"solver":"scipy.optimize.milp/HiGHS" if m["integrality"].any() else "scipy.optimize.linprog/HiGHS","scipy_version":scipy.__version__,
               "scenario_sha256":_digest(scenario),"evidence_type":"modelled_perfect_foresight" if _causal_state is None else "observed_state_forecast_plan"}
     if _peak_import_cost:evidence["peak_import_cost_eur_mw"]=_peak_import_cost
+    if _peak_periods:evidence["peak_periods"]=list(_peak_periods)
     def failed(sol):
         return {"status":"solver_failed","solver_status":int(sol.status),"message":sol.message,"evidence":evidence}
     def limit(indices,coefficients,objective):
@@ -374,6 +380,9 @@ def evaluate(scenario: dict, *, _causal_state=None, _deadline=None, _peak_import
     if _peak_import_cost:
         result["peak_import_cost_eur"]=max(g)*_peak_import_cost
         result["operating_cost_eur"]+=result["peak_import_cost_eur"]
+    if _peak_periods:
+        result["period_peak_import_cost_eur"]=sum(max(g[start:end])*rate for start,end,rate in _peak_periods)
+        result["operating_cost_eur"]+=result["period_peak_import_cost_eur"]
     diagnostics=[]
     for name,kind,cols in resources:
         spec=next(sp for sp in scenario.get("resources",[]) if sp["id"]==name)

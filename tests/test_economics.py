@@ -55,6 +55,37 @@ class EconomicsTests(unittest.TestCase):
         self.assertAlmostEqual(x["peak_import_mw"],1)
         self.assertAlmostEqual(x["peak_tariff_cost_eur"],100000)
         self.assertAlmostEqual(x["other_variable_cost_eur"],4800,places=4)
+    def test_monthly_peaks_reconcile_and_change_dispatch(self):
+        a=alternative(tariff={"grid_emissions_kg_mwh":0,"monthly_peak_eur_mw":[6000,100]+[0]*10})
+        a["scenario"]["baseline_mw"]=[2]+[1]*30+[2]+[1]*333
+        a["scenario"]["resources"]=[{"id":"g","kind":"generator","power_mw":1,"variable_cost_eur_mwh":200}]
+        a["fuel"]={"g":{"electrical_efficiency":1,"fuel_eur_mwh":0,"fuel_emissions_kg_mwh":0}}
+        x=compare_lifecycle(request(a))["cases"][0]["alternatives"][0]["annual"]
+        self.assertEqual(x["dispatch_status"],"solved")
+        self.assertEqual(len(x["monthly_peak_tariffs"]),12)
+        self.assertAlmostEqual(x["monthly_peak_tariffs"][0]["peak_import_mw"],1)
+        self.assertAlmostEqual(x["monthly_peak_tariffs"][1]["peak_import_mw"],2,places=5)
+        self.assertAlmostEqual(x["peak_tariff_cost_eur"],6200,places=2)
+        self.assertAlmostEqual(x["other_variable_cost_eur"],4800)
+        self.assertAlmostEqual(x["annual_operating_cost_eur"],878400+4800+6200,places=2)
+        self.assertEqual(evaluate_request("economics",request(a)),compare_lifecycle(request(a)))
+
+    def test_monthly_tariff_rejects_invalid_rates_and_double_billing(self):
+        for rates in ([1]*11,[1]*11+[-1],[1]*11+[True],1):
+            a=alternative(tariff={"grid_emissions_kg_mwh":0,"monthly_peak_eur_mw":rates})
+            with self.subTest(rates=rates),self.assertRaises(ValueError):
+                compare_lifecycle(request(a))
+        a=alternative()
+        a["tariff"]["monthly_peak_eur_mw"]=[1]*12
+        with self.assertRaisesRegex(ValueError,"not both"):
+            compare_lifecycle(request(a))
+
+    def test_monthly_tariff_rejects_samples_crossing_boundaries(self):
+        a=alternative(tariff={"grid_emissions_kg_mwh":0,"monthly_peak_eur_mw":[1]*12})
+        a["scenario"].update(interval_hours=20,baseline_mw=[1]*438)
+        with self.assertRaisesRegex(ValueError,"month boundaries"):
+            compare_lifecycle(request(a))
+
     def test_sensitivity_reoptimizes_fuel(self):
         a=alternative(tariff={"grid_emissions_kg_mwh":0})
         a["scenario"]["resources"]=[{"id":"g","kind":"generator","power_mw":1}]
