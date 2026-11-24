@@ -82,7 +82,8 @@ def main():
     if args.release_cases:
         cases.update(release_cases())
     for name, (op, payload) in cases.items():
-        expected = evaluate_request(op, payload)
+        # Compare JSON values, not Python-only container types (e.g. tariff tuples).
+        expected = json.loads(json.dumps(evaluate_request(op, payload), allow_nan=False))
         if name == "commissioning":
             row = expected["cases"][0]["alternatives"][0]
             if (not row["annual"]["feasible"] or row["commissioning"]["feasible"]
@@ -96,7 +97,7 @@ def main():
         response = rpc("tools/call", {"name": "evaluate_flexibility", "arguments": envelope})
         actual = json.loads(response["content"][0]["text"])
         if browser != expected or actual != expected:
-            raise RuntimeError(f"{op}: numerical or evidence parity failed (check engine/solver versions)")
+            raise RuntimeError(f"{name}: numerical or evidence parity failed (check engine/solver versions)")
         print(f"{name}: exact browser/MCP/local parity", flush=True)
 
     status, body = post("/api/flexibility/evaluate", {"operation": "dispatch", "payload": {}})
