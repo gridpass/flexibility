@@ -20,7 +20,20 @@ Alternatively install locally with `pip install .` and use the `gridpass-flexibi
 
 The example is a synthetic 20 MW data centre facing a 15 MW import cap for four hours. It has 1.5 MW of flexible load, 2 MW of available generation and a 3 MW / 8 MWh battery. The model evaluates whether the resources can sustain the requested reduction, considering notice, duration, annual event count, recovery time and variable costs.
 
-## Current scope
+## Advanced evaluation
+
+The optional optimization engine uses SciPy/HiGHS to create chronological operating schedules, model battery SOC and recovery, constrain generation output and ramp, model deferred workloads and cooling, evaluate defined event profiles, and compare candidate resource additions.
+
+```sh
+pip install ".[optimization]"
+gridpass-flexibility --dispatch examples/chronological.json
+gridpass-flexibility --compare-designs examples/design-comparison.json
+gridpass-flexibility --profile examples/profile-check.json
+```
+
+Read the [chronological evaluation specification](docs/CHRONOLOGICAL.md) for assumptions, schema, economics, and evidence boundaries. The example profile check is intentionally incomplete because it does not cover a full year. The implementation does not claim EPRI certification or equivalence to its tool.
+
+## Screening model scope
 
 - Site power gap in MW and energy demand in MWh per restriction.
 - Eligibility of flexible demand and on-site generation against notice and duration requirements.
@@ -29,11 +42,11 @@ The example is a synthetic 20 MW data centre facing a 15 MW import cap for four 
 - Annual event hours, estimated variable costs and unserved reduction.
 - Machine-readable JSON inputs and outputs.
 
-This is a first-pass screening model, not chronological dispatch optimisation, a network study or field validation. It assumes a full battery at the first event, identical non-overlapping events, constant site load and available resources. It excludes detailed ramp and rebound models, fuel constraints beyond the entered duration, correlated failures, capex, fixed costs, protection and network flows.
+The zero-dependency screening model is not chronological dispatch optimisation, a network study or field validation. It assumes a full battery at the first event, identical non-overlapping events, constant site load and available resources. It excludes detailed ramp and rebound models, fuel constraints beyond the entered duration, correlated failures, capex, fixed costs, protection and network flows.
 
 ## Roadmap
 
-See [research and implementation scope](docs/RESEARCH.md) and [model details](docs/MODEL.md). We plan to reuse mature open optimisation libraries rather than develop a solver from scratch.
+See [research and implementation scope](docs/RESEARCH.md) and [model details](docs/MODEL.md). The advanced evaluator already reuses SciPy/HiGHS; see the remaining capability gaps in the roadmap.
 
 ## GridPass services
 

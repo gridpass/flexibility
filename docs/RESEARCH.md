@@ -51,3 +51,7 @@ The repository must not contain EPRI member-only materials, private corresponden
 - PyPSA documentation and licence: https://github.com/PyPSA/PyPSA
 
 Open verification questions: current evaluator access/price/licence, complete official class test protocol, validation programme requirements, and operator acceptance criteria. Seek clarification from DCFlex's technical team before claiming conformance. This document is a research baseline, not an exhaustive review of member-only information.
+
+## Implementation checkpoint (2026-11-24, v0.2.0)
+
+The chronological evaluator now uses SciPy/HiGHS with explicit interval balance, storage SOC, generation ramp and fuel budget, deferred work recovery and deadlines, event notice, target MW, cap violations, operating cost, and input/output hashes. A candidate-design comparison ranks feasible additions and reports observed constraint saturation. Independent profiles report incomplete coverage rather than automatically awarding classes. The following gaps remain: robust and stochastic operation, continuous expansion, binary unit commitment, calibrated thermal and workload models, normative classification and field verification, public MCP integration. See [chronological evaluator](CHRONOLOGICAL.md).

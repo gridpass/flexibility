@@ -1,0 +1,46 @@
+{
+  "version": "gridpass-example-2026-11",
+  "notice": "Illustrative finite test contracts, not EPRI's official classes. These parameters are editable. A test requires an explicit event schedule and a full-year utilization case.",
+  "profiles": [
+    {
+      "id": "critical-peaking",
+      "version": "gridpass-example-2026-11",
+      "notice_minutes": 60,
+      "activation_hours": 5,
+      "annual_event_hours": 87.6,
+      "reduction_mw": 5
+    },
+    {
+      "id": "peaking",
+      "version": "gridpass-example-2026-11",
+      "notice_minutes": 60,
+      "activation_hours": 5,
+      "annual_event_hours": 876,
+      "reduction_mw": 5
+    },
+    {
+      "id": "fast",
+      "version": "gridpass-example-2026-11",
+      "notice_minutes": 5,
+      "activation_hours": 5,
+      "annual_event_hours": 876,
+      "reduction_mw": 5
+    },
+    {
+      "id": "prolonged",
+      "version": "gridpass-example-2026-11",
+      "notice_minutes": 0,
+      "activation_hours": 96,
+      "annual_event_hours": 876,
+      "reduction_mw": 5
+    },
+    {
+      "id": "continuous-test",
+      "version": "gridpass-example-2026-11",
+      "notice_minutes": 0,
+      "activation_hours": 8760,
+      "annual_event_hours": 8760,
+      "reduction_mw": 5
+    }
+  ]
+}
