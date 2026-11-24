@@ -59,3 +59,7 @@ The chronological evaluator now uses SciPy/HiGHS with explicit interval balance,
 ## Implementation checkpoint (2026-11-24, v0.3.0)
 
 Continuous battery MW/MWh and generator MW sizing now shares a single design across a finite set of hard-cap scenarios. The chosen capacities are independently replayed through the chronological engine. The commitment test suite generates distributed and clustered annual events and optional resource outages. The official MCP SDK exposes the same six operations as the CLI through a single read-only tool. See [acceptance criteria](ACCEPTANCE.md) for the remaining work. The advanced solver is not yet integrated into the existing public GridPass website/MCP.
+
+## Implementation checkpoint (2026-11-24, v0.3.1)
+
+Independent profile schema v1 is packaged and validated. Annual, duration, notice, recovery and optional resolution requirements must be covered in one full-year case. Result hashes bind the normalized profile and scenario suite. Full-year 15-minute synthetic conformance and negative tests pass. Public comparison sources were checked on 2026-11-24: EPRI deliverables (2026-10-12 paper) and NVIDIA DSX Flex Architecture (adaptation of v1.0 accessed 2026-11-13). These are conceptual references, not normative GridPass dependencies or evidence of official EPRI conformance. See [independent profile specification](PROFILE_SPEC.md).

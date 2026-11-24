@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gridpass-flexibility"
-version = "0.3.0"
+version = "0.3.1"
 description = "Independent open-source screening for large-load grid flexibility"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
@@ -13,8 +13,8 @@ dependencies = []
 readme = "README.md"
 
 [project.optional-dependencies]
-optimization = ["scipy>=1.11,<2", "numpy>=1.24,<3"]
-agent = ["mcp>=1.12,<2", "scipy>=1.11,<2", "numpy>=1.24,<3"]
+optimization = ["scipy>=1.11,<2", "numpy>=1.24,<3", "jsonschema>=4.20,<5"]
+agent = ["mcp>=1.12,<2", "scipy>=1.11,<2", "numpy>=1.24,<3", "jsonschema>=4.20,<5"]
 guard = ["cryptography>=41,<47"]
 
 [project.urls]
@@ -27,3 +27,6 @@ gridpass-flexibility-mcp = "gridpass_flexibility.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+gridpass_flexibility = ["schemas/*.json"]

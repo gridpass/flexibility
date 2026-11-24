@@ -13,15 +13,23 @@ Goal: an independently usable open-source large-load flexibility assessment work
 - Local MCP uses the official SDK and the same evaluation interface as CLI; real stdio initialize/list/call tests verify numeric parity and invalid-operation handling.
 - No proprietary EPRI implementation, private deck or customer data is distributed.
 
+## Verified in v0.3.1 (profile conformance)
+
+- Public, versioned JSON Schema (Draft 2020-12) ships in the installed package; unknown fields, non-finite values and inconsistent annual budgets are rejected.
+- One full-year case must jointly exercise target MW, notice, activation duration, annual use and the declared recovery and sampling constraints. Separate partial cases cannot combine into a false pass.
+- Independent tests include a complete 35,040-interval (15-minute) synthetic year, recovery and resolution rejection, schema validation, and reproducible result hashes.
+- EPRI's public October 12, 2026 description and NVIDIA's November 13, 2026 adaptation motivate the dimensions; no official class label or certification is asserted.
+- v0.3.0 merge #6 retained the separate Guard reference demo and passed CI on Python 3.10 and 3.12. The public simplified calculator from private PR #79 was verified live on 2026-11-24.
+
 ## Remaining release gates
 
 | Gate | Acceptance evidence |
 |---|---|
-| Profile interoperability | Versioned public specification, traceable normative references, explicit limits and an independent conformance suite |
+| Profile interoperability | Independent schema and conformance tests now implemented; obtain authoritative EPRI class semantics and operator-specific rules before any formal mapping |
 | Operational feasibility | Causal/receding-horizon schedule with unknown future events, failure/recovery tests, fine time-step response checks, storage mode and generator start/run constraints |
 | Resource models | Calibrated workload and thermal constraints, renewables, protected loads, real measured traces with clear reuse permissions |
 | Economics | Consistent horizon, capital and fixed costs, fuel, maintenance, tariffs, emissions, connection-delay value and sensitivity; independently check numerical examples |
-| Validation | Closed-form cases, solver cross-checks, full-year 15-minute case, failure injection, numerical tolerance, install/CI and repeatable benchmark artifacts |
+| Validation | Closed-form and synthetic full-year 15-minute cases implemented; remaining solver cross-checks, real trace replay, failure injection, numerical tolerance and repeatable benchmark artifacts |
 | Hosted parity | Public website and existing MCP use this canonical engine, provide a simple entry point plus advanced operations; authenticated or resource-bounded optimization; live endpoint tests, no customer data leakage |
 | Usability | Documented examples, versioned request/response schema, clear error states, inspectable schedules, exportable results and limitations |
 

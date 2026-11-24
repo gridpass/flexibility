@@ -2,8 +2,8 @@
 from __future__ import annotations
 import math
 from copy import deepcopy
-from .dispatch import _number, _series
-from .profiles import evaluate_profile
+from .dispatch import _number, _series, _digest
+from .profiles import evaluate_profile, validate_profile
 
 def build_stress_suite(site, profile, outage_ids=()):
     """Evenly distributed and clustered activations; optional whole-horizon outage.
@@ -11,7 +11,9 @@ def build_stress_suite(site, profile, outage_ids=()):
     The cap is chosen conservatively for the complete event. Exact alignment of
     duration to interval size is required. Annual use rounds up by one interval.
     """
+    profile=validate_profile(profile)
     dt=_number(site["interval_hours"],"interval hours",1/3600,24)
+    if dt*60>profile.get("maximum_interval_minutes",1440)+1e-8:raise ValueError("Site interval exceeds profile resolution limit")
     n=len(site["baseline_mw"])
     if abs(n*dt-8760)>1e-6:raise ValueError("Stress suite requires one 8760-hour baseline")
     duration=_number(profile["activation_hours"],"activation hours",dt,8760)
@@ -20,7 +22,8 @@ def build_stress_suite(site, profile, outage_ids=()):
     annual=_number(profile["annual_event_hours"],"annual event hours",duration,8760)
     total=min(n,math.ceil(annual/dt-1e-9))
     recovery=_number(profile.get("minimum_recovery_hours",0),"minimum recovery")
-    gap=math.ceil(recovery/dt-1e-9)
+    gap=round(recovery/dt)
+    if abs(gap*dt-recovery)>1e-6:raise ValueError("Recovery duration must align with intervals")
     target=_number(profile["reduction_mw"],"reduction MW",.000001)
     notice=_number(profile["notice_minutes"],"notice minutes")
     lengths=[length]*(total//length)+([total%length] if total%length else [])
@@ -60,4 +63,6 @@ def test_commitment(site, profile, outage_ids=()):
     for case,desc in zip(r["cases"],suite):case["id"]=desc["id"]
     r["suite"]={"version":"gridpass-stress-v1","outage_ids":list(outage_ids),
                 "description":"Distributed and clustered annual events at a conservative cap, optional whole-horizon resource outages."}
+    r["evidence"].pop("result_sha256",None)
+    r["evidence"]["result_sha256"]=_digest(r)
     return r
