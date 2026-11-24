@@ -16,6 +16,7 @@ jobs:
       - run: gridpass-flexibility examples/data-centre.json
       - run: gridpass-flexibility --dispatch examples/chronological.json
       - run: gridpass-flexibility --dispatch examples/discrete-dispatch.json
+      - run: gridpass-flexibility --dispatch examples/thermal-dispatch.json
       - run: gridpass-flexibility --size examples/capacity-sizing.json
       - run: gridpass-flexibility --stress examples/annual-stress.json
       - run: gridpass-flexibility --causal examples/causal-replay.json

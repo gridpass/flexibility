@@ -30,7 +30,7 @@ Supply an object with:
 All values are hypothetical observations. The simulator has the full input
 trace for scoring, but the policy does not receive its unobserved future.
 At sample t, it observes current demand, ordinary cap, price and asset
-availability. Future values of these signals are forecast by persistence.
+availability, protected load and current thermal inputs. Future values of these signals are forecast by persistence.
 An event's start, end and restricted cap become visible only when its notice
 is issued. Notice is rounded down to the time actually available on the
 sample grid. Event windows already announced are retained. An event announced
@@ -38,7 +38,7 @@ before the start of the replay is known at the first sample. Only the first
 action of each new forecast plan is executed.
 
 The policy first minimizes the current sample's import-cap gap, then the
-sum of forecast gaps, then battery recovery deficits outside event windows,
+sum of forecast gaps, then battery and thermal recovery deficits outside event windows,
 then operating costs. Gap optimization uses MW units internally, avoiding
 a time-step-dependent feasibility tolerance. The result reports MWh using
 the declared interval length. It assumes instantaneous observation at each
@@ -59,6 +59,8 @@ sample and execution of the calculated interval-average action.
   may retain its observed output during the notification delay; it cannot
   increase it until ready. Unit startup, minimum run time and ramp are sampled
   constraints, not a calibrated mechanical model.
+- Thermal cooling: observed zone temperature carries forward; ambient, internal heat gain, baseline cooling and COP use persistence. Hard temperature bounds and terminal recovery are enforced as described in [THERMAL.md](THERMAL.md). An impossible forecast returns a non-passing partial replay.
+- Renewable: only current availability is observed; generation can be curtailed and no export is allowed.
 - Workload, cooling proxy and flexible load: carry outstanding deferred MWh
   as FIFO entries with their original deadlines. Recovery does not reset
   deadlines at each solve. The existing energy-equivalent resource model

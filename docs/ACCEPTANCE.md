@@ -37,13 +37,21 @@ Goal: an independently usable open-source large-load flexibility assessment work
 - Explicit terminal recovery checks, sampled-notice regression, bounded replay horizon and shared solver time budget, timeout error, and local MCP causal roundtrip are tested. All 75 tests passed locally.
 - See [causal replay specification](CAUSAL.md). Calibrated thermal/workload models, fallback control after infeasible forecasts, sub-sample plant response, measured validation and hosted integration remain open.
 
+## Verified in v0.3.4 (physical cooling and renewable resources)
+
+- Single-zone sensible-heat state uses exact zero-order-hold discretization, temperature constraints, bounded cooling, variable COP, ambient and internal heat gain. An impossible thermal balance fails rather than relaxing temperature limits.
+- Protected non-cooling loads and baseline cooling are excluded from aggregate workload deferral. Renewable capacity factors and curtailment are represented without grid export.
+- Chronological and causal solvers use the same physical constraints. Observed temperature persists between replans; unknown future weather and renewable availability cannot affect preceding actions. Terminal thermal recovery is checked separately.
+- Closed-form heat-balance, variable inputs, baseline/cost accounting, surprise event, thermal failure, recovery, protected-load and renewable-curtailment tests pass. Installed-package MCP numerical parity includes the new thermal example. 89 tests passed locally.
+- [Thermal resource specification](THERMAL.md) records measured-data candidate licences and boundaries. No measured parameter fit or field-validation claim is made.
+
 ## Remaining release gates
 
 | Gate | Acceptance evidence |
 |---|---|
 | Profile interoperability | Independent schema and conformance tests now implemented; obtain authoritative EPRI class semantics and operator-specific rules before any formal mapping |
 | Operational feasibility | Sampled causal replay, discrete dispatch, forced-trip/restart and state carryover implemented; remaining fallback control, calibrated plant response, finer response checks and independent field validation |
-| Resource models | Calibrated workload and thermal constraints, renewables, protected loads, real measured traces with clear reuse permissions |
+| Resource models | Temperature-constrained cooling, protected loads and renewable curtailment implemented; remaining calibrated thermal and workload parameters and real measured traces with clear reuse permissions |
 | Economics | Consistent horizon, capital and fixed costs, fuel, maintenance, tariffs, emissions, connection-delay value and sensitivity; independently check numerical examples |
 | Validation | Closed-form and synthetic full-year 15-minute cases implemented; a small exhaustive commitment cost cross-check is implemented; sampled failure injection and prefix invariance now tested; remaining real trace replay, finer numerical tolerance and repeatable benchmark artifacts |
 | Hosted parity | Public website and existing MCP use this canonical engine, provide a simple entry point plus advanced operations; authenticated or resource-bounded optimization; live endpoint tests, no customer data leakage |

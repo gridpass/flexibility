@@ -1,4 +1,4 @@
 """Open, independent large-load flexibility screening."""
 from .screening import assess, FIELDS, SCHEMA, ASSUMPTIONS
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 __all__ = ["assess", "FIELDS", "SCHEMA", "ASSUMPTIONS"]

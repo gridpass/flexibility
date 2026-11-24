@@ -23,12 +23,13 @@ The example is a synthetic 20 MW data centre facing a 15 MW import cap for four 
 
 ## Advanced evaluation
 
-The optional optimization engine uses SciPy/HiGHS LP/MILP to create chronological operating schedules with optional binary battery modes and generator commitment, model battery SOC and recovery, constrain generation output and ramp, model deferred workloads and cooling, evaluate defined event profiles, and compare candidate resource additions.
+The optional optimization engine uses SciPy/HiGHS LP/MILP to create chronological operating schedules with optional binary battery modes and generator commitment, model battery SOC and recovery, constrain generation output and ramp, model deferred workloads, temperature-constrained cooling and renewable availability, evaluate defined event profiles, and compare candidate resource additions.
 
 ```sh
 pip install ".[optimization]"
 gridpass-flexibility --dispatch examples/chronological.json
 gridpass-flexibility --dispatch examples/discrete-dispatch.json
+gridpass-flexibility --dispatch examples/thermal-dispatch.json
 gridpass-flexibility --compare-designs examples/design-comparison.json
 gridpass-flexibility --profile-schema
 gridpass-flexibility --profile examples/profile-check.json
@@ -38,6 +39,10 @@ gridpass-flexibility --causal examples/causal-replay.json
 ```
 
 Read the [chronological evaluation specification](docs/CHRONOLOGICAL.md) for assumptions, schema, economics, and evidence boundaries. The example profile check is intentionally incomplete because it does not cover a full year. The implementation does not claim EPRI certification or equivalence to its tool.
+
+## Physical resource models
+
+The single-zone cooling model uses an exact sampled sensible-heat balance, temperature limits, heat gains, ambient temperature, COP, and terminal recovery. Renewable availability limits generation; curtailment is allowed. The site model reserves explicitly protected non-cooling load and prevents workload deferral from double-counting baseline cooling. See [thermal and renewable resources](docs/THERMAL.md). Parameters still require site-specific calibration.
 
 ## Capacity planning and commitment stress tests
 
@@ -49,7 +54,7 @@ See [capacity and commitment planning](docs/PLANNING.md), the [v1 commitment pro
 
 ## Causal replay
 
-Run a sampled receding-horizon policy using only observed resource states and announced events. Future unobserved signals use persistence forecasts. Battery SOC, generator fuel and dwell time, and workload recovery deadlines carry across solves. The replay reports forced trips, unmet caps, costs, recovery shortfalls and partial failures separately from perfect-foresight feasibility. See [causal replay](docs/CAUSAL.md).
+Run a sampled receding-horizon policy using only observed resource states and announced events. Future unobserved signals use persistence forecasts. Battery SOC, generator fuel and dwell time, cooling temperature, and workload recovery deadlines carry across solves. The replay reports forced trips, unmet caps, costs, recovery shortfalls and partial failures separately from perfect-foresight feasibility. See [causal replay](docs/CAUSAL.md).
 
 ## MCP for agents
 

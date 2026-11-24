@@ -18,9 +18,10 @@ Resource fields:
 
 - Generator: power, response delay, ramp MW/h, initial output, maximum electrical energy from the available fuel, variable cost.
 - Battery: power, charging power, energy, initial and terminal state of charge, reserve, charge/discharge efficiency and variable cost.
+- Physical thermal cooling and renewable generation: see [thermal and renewable resources](THERMAL.md); use protected non-cooling load to bound aggregate deferral.
 - Flexible load, workload or cooling proxy: reduction MW, response delay, shift budget in MWh, maximum recovery delay in hours, recovery MW and variable cost. Deferred energy has to be restored; the cooling proxy is not a temperature or chiller model.
 
-The evaluator minimizes uncovered import-cap energy first and then minimizes operating cost. It uses an explicit interval energy balance, storage trajectories and workload recovery obligations. The default resource model is continuous/divisible. Optional discrete generator and battery modes use SciPy/HiGHS mixed-integer optimization, described below. Every schedule still has perfect foresight; it is not a causal dispatch policy. Emissions and fuel supply contracts are not modeled. Event readiness and ramp are simplified planning assumptions. No weather, grid AC flow, protection, fault response or equipment certification is inferred.
+The evaluator minimizes uncovered import-cap energy first and then minimizes operating cost. It uses an explicit interval energy balance, storage trajectories and workload recovery obligations. The default resource model is continuous/divisible. Optional discrete generator and battery modes use SciPy/HiGHS mixed-integer optimization, described below. Every schedule still has perfect foresight; it is not a causal dispatch policy. Emissions and fuel supply contracts are not modeled. Event readiness and ramp are simplified planning assumptions. Weather, heat gains, COP and renewable availability can be supplied explicitly; no weather forecast, grid AC flow, protection, fault response or equipment certification is inferred.
 
 Results include the interval schedule, peak and total unmet reduction, event-level violations, modeled operating cost, observed limiting resource bounds and input/result hashes with software and solver version. Evidence is explicitly labeled modelled perfect foresight. It is not a signed field test.
 
@@ -49,4 +50,4 @@ Example profiles are independent, editable finite test envelopes, not official E
 
 ## Next engineering steps
 
-Explicit trips and restart recovery, calibrated workload and thermal models, sampled causal replay is available separately (see [CAUSAL.md](CAUSAL.md)); remaining stochastic/robust policies and additional stress event sequences, measured field replay, report export, and the GridPass public MCP/website integration. Keep the zero-dependency screening calculator for quick cases; advanced numerical work runs with an established solver.
+Physical cooling and renewable models are available; calibrated workload/thermal parameters and measured replay remain open. Sampled causal replay is available separately (see [CAUSAL.md](CAUSAL.md)); remaining stochastic/robust policies and additional stress event sequences, measured field replay, report export, and the GridPass public MCP/website integration. Keep the zero-dependency screening calculator for quick cases; advanced numerical work runs with an established solver.
