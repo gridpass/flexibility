@@ -23,11 +23,12 @@ The example is a synthetic 20 MW data centre facing a 15 MW import cap for four 
 
 ## Advanced evaluation
 
-The optional optimization engine uses SciPy/HiGHS to create chronological operating schedules, model battery SOC and recovery, constrain generation output and ramp, model deferred workloads and cooling, evaluate defined event profiles, and compare candidate resource additions.
+The optional optimization engine uses SciPy/HiGHS LP/MILP to create chronological operating schedules with optional binary battery modes and generator commitment, model battery SOC and recovery, constrain generation output and ramp, model deferred workloads and cooling, evaluate defined event profiles, and compare candidate resource additions.
 
 ```sh
 pip install ".[optimization]"
 gridpass-flexibility --dispatch examples/chronological.json
+gridpass-flexibility --dispatch examples/discrete-dispatch.json
 gridpass-flexibility --compare-designs examples/design-comparison.json
 gridpass-flexibility --profile-schema
 gridpass-flexibility --profile examples/profile-check.json

@@ -29,6 +29,6 @@ Use the single generic `evaluate_flexibility` tool:
 | size | examples/capacity-sizing.json |
 | stress | examples/annual-stress.json |
 
-Payloads are JSON objects, not filenames or URLs. The MCP server and CLI call the same Python evaluation functions. Results are structured JSON and conventional MCP text content. The server provides local stdio or loopback-only Streamable HTTP transport. An agent-request complexity guard limits resource-interval count; it is not a production workload isolation mechanism.
+Payloads are JSON objects, not filenames or URLs. The MCP server and CLI call the same Python evaluation functions. Results are structured JSON and conventional MCP text content. The server provides local stdio or loopback-only Streamable HTTP transport. An agent-request complexity guard limits resource-interval count and mixed-integer complexity (12,000 binary variables per dispatch); it is not a production workload isolation mechanism.
 
 The hosted GridPass public MCP remains a separate integration target. For a public solver endpoint, use authenticated or rate-limited isolated workers, request size and time limits, bounded queues, and prevent disclosure of uploaded site information. Do not expose the local server directly to the Internet. It cannot control equipment or submit customer leads.

@@ -20,9 +20,22 @@ Resource fields:
 - Battery: power, charging power, energy, initial and terminal state of charge, reserve, charge/discharge efficiency and variable cost.
 - Flexible load, workload or cooling proxy: reduction MW, response delay, shift budget in MWh, maximum recovery delay in hours, recovery MW and variable cost. Deferred energy has to be restored; the cooling proxy is not a temperature or chiller model.
 
-The evaluator minimizes uncovered import-cap energy first and then minimizes operating cost. It uses an explicit interval energy balance, storage trajectories and workload recovery obligations. All resources are continuous/divisible and the schedule has perfect foresight. The battery has a shared charge/discharge inverter envelope; this is a continuous relaxation, not binary operating mode enforcement. The generator model does not enforce minimum running time, start cost, emissions or fuel contracts. Event readiness and ramp are simplified planning assumptions. No weather, grid AC flow, protection, fault response or equipment certification is inferred.
+The evaluator minimizes uncovered import-cap energy first and then minimizes operating cost. It uses an explicit interval energy balance, storage trajectories and workload recovery obligations. The default resource model is continuous/divisible. Optional discrete generator and battery modes use SciPy/HiGHS mixed-integer optimization, described below. Every schedule still has perfect foresight; it is not a causal dispatch policy. Emissions and fuel supply contracts are not modeled. Event readiness and ramp are simplified planning assumptions. No weather, grid AC flow, protection, fault response or equipment certification is inferred.
 
 Results include the interval schedule, peak and total unmet reduction, event-level violations, modeled operating cost, observed limiting resource bounds and input/result hashes with software and solver version. Evidence is explicitly labeled modelled perfect foresight. It is not a signed field test.
+
+## Discrete equipment operation
+
+Set `discrete: true` on an existing battery or generator to select the mixed-integer model. The continuous default remains suitable for fast planning and capacity sizing.
+
+- Battery: one binary charging-mode variable per interval prevents simultaneous charging and discharging, including artificial energy dissipation through round-trip losses.
+- Generator: binary online, startup and shutdown variables; optional `minimum_output_mw`, `minimum_up_hours`, `minimum_down_hours`, `startup_cost_eur`, and `online_cost_eur_per_hour`. The initial state is given by `initial_on`, `initial_mw`, and `initial_state_hours`. If omitted, the state follows positive initial output and is assumed to have lasted long enough for all dwell requirements.
+- The initial generator state must agree with its minimum output. Dwell times are rounded upward to complete intervals. Start and stop obligations are enforced within the simulation horizon; remaining obligations beyond its end are not modeled.
+- Ramp and response limits still apply. An outage that contradicts an existing must-run or ramp obligation can make the model infeasible. This is reported as a solver failure with no pass; explicit forced trips and restart recovery are future work.
+- Generator startup and online cost contribute to the objective and to reported operating cost. Solver timeout or failure never gives a positive result.
+- Continuous capacity sizing rejects discrete options or assets rather than silently ignoring their constraints. Compare explicit equipment designs when commitment constraints matter.
+
+Run `gridpass-flexibility --dispatch examples/discrete-dispatch.json`. The mixed-integer solver has a 60-second limit per solve. The local MCP also bounds binary-variable count. Hosted execution requires separate worker isolation and aggregate resource limits.
 
 ## Design comparisons
 
@@ -36,4 +49,4 @@ Example profiles are independent, editable finite test envelopes, not official E
 
 ## Next engineering steps
 
-Mixed-integer generation and battery modes, calibrated workload and thermal models, causal stochastic/robust schedules, additional stress event sequences, measured field replay, report export, and the GridPass public MCP/website integration. Keep the zero-dependency screening calculator for quick cases; advanced numerical work runs with an established solver.
+Explicit trips and restart recovery, calibrated workload and thermal models, causal stochastic/robust schedules, additional stress event sequences, measured field replay, report export, and the GridPass public MCP/website integration. Keep the zero-dependency screening calculator for quick cases; advanced numerical work runs with an established solver.

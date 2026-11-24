@@ -10,6 +10,8 @@ from . import __version__
 
 def _option(raw):
     o=deepcopy(raw)
+    if ("discrete" in o and o["discrete"] is not False) or any(k in o for k in ("minimum_output_mw","minimum_up_hours","minimum_down_hours","initial_on","initial_state_hours","startup_cost_eur","online_cost_eur_per_hour")):
+        raise ValueError("Continuous capacity sizing does not support discrete options; use design comparison")
     name=o["id"]
     if not isinstance(name,str) or not name:raise ValueError("Invalid option ID")
     kind=o["kind"]
