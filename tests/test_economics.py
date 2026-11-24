@@ -70,6 +70,35 @@ class EconomicsTests(unittest.TestCase):
         self.assertAlmostEqual(x["annual_operating_cost_eur"],878400+4800+6200,places=2)
         self.assertEqual(evaluate_request("economics",request(a)),compare_lifecycle(request(a)))
 
+    def test_seasonal_commissioning_excludes_pre_service_months(self):
+        a=alternative(delay_months=6,seasonal_commissioning=True,
+                      tariff={"grid_emissions_kg_mwh":0,"monthly_peak_eur_mw":[12000]+[0]*11})
+        a["scenario"]["price_eur_mwh"]=[100]*181+[200]*184
+        r=compare_lifecycle(request(a))["cases"][0]["alternatives"][0]
+        expected=184*24*200
+        self.assertAlmostEqual(r["finance"]["cashflows"][1]["operating_cost_eur"],expected)
+        self.assertAlmostEqual(r["finance"]["cashflows"][2]["operating_cost_eur"],expected+181*24*100+12000)
+        self.assertAlmostEqual(sum(r["annual"]["monthly_operating_cost_eur"]),r["annual"]["annual_operating_cost_eur"])
+        self.assertAlmostEqual(r["finance"]["npv_eur"],-100000+(995000-expected)/1.1+(1990000-expected-181*24*100-12000)/1.21)
+        self.assertEqual(evaluate_request("economics",request(a)),compare_lifecycle(request(a)))
+
+    def test_seasonal_commissioning_reconciles_generator_cost(self):
+        a=alternative(delay_months=12,seasonal_commissioning=True,
+                      tariff={"grid_emissions_kg_mwh":0,"carbon_eur_tonne":50,"monthly_peak_eur_mw":[0]*12})
+        a["scenario"]["resources"]=[{"id":"g","kind":"generator","power_mw":1,"variable_cost_eur_mwh":10}]
+        a["fuel"]={"g":{"electrical_efficiency":.5,"fuel_eur_mwh":20,"fuel_emissions_kg_mwh":100}}
+        r=compare_lifecycle(request(a))["cases"][0]["alternatives"][0]
+        self.assertEqual(r["finance"]["cashflows"][1]["operating_cost_eur"],0)
+        self.assertAlmostEqual(r["finance"]["cashflows"][2]["operating_cost_eur"],8760*60)
+        self.assertAlmostEqual(r["annual"]["monthly_operating_cost_eur"][1],28*24*60)
+
+    def test_seasonal_commissioning_rejects_ambiguous_inputs(self):
+        for a in (alternative(seasonal_commissioning=True),
+                  alternative(seasonal_commissioning=True,delay_months=1.5,tariff={"grid_emissions_kg_mwh":0,"monthly_peak_eur_mw":[0]*12}),
+                  alternative(seasonal_commissioning="yes")):
+            with self.assertRaisesRegex(ValueError,"[Ss]easonal"):
+                compare_lifecycle(request(a))
+
     def test_monthly_tariff_rejects_invalid_rates_and_double_billing(self):
         for rates in ([1]*11,[1]*11+[-1],[1]*11+[True],1):
             a=alternative(tariff={"grid_emissions_kg_mwh":0,"monthly_peak_eur_mw":rates})

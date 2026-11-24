@@ -89,6 +89,10 @@ Goal: an independently usable open-source large-load flexibility assessment work
 
 - Twelve calendar-month demand rates are optimized in the same sparse HiGHS dispatch model; independent accounting reconciles each month’s sampled peak and total costs. A synthetic January/February case dispatches generation only for the expensive January peak, producing EUR 6,200 demand charges and EUR 4,800 nonfuel generation cost. Invalid rates, overlapping annual/monthly tariff specifications and samples spanning month boundaries are rejected; generic interface parity tested. No production deployment or seasonal commissioning claim.
 
+## Verified seasonal commissioning cost allocation
+
+- Optional calendar-month allocation uses the same optimized annual schedule and reconciles monthly energy, fuel, carbon, variable, commitment and peak charges to the annual total. A July start excludes January demand charges and uses actual modeled July–December energy cost. Whole-month delays, explicit monthly tariff and boolean opt-in are required. Full-year and generator-cost accounting and generic interface parity tested. Initial commissioning state and partial-year redispatch remain unvalidated; no production deployment claim.
+
 ## Remaining release gates
 
 | Gate | Acceptance evidence |
@@ -96,7 +100,7 @@ Goal: an independently usable open-source large-load flexibility assessment work
 | Profile interoperability | Independent schema and conformance tests now implemented; obtain authoritative EPRI class semantics and operator-specific rules before any formal mapping |
 | Operational feasibility | Sampled causal replay, discrete dispatch, forced-trip/restart and state carryover implemented; sampled degraded workload recovery implemented; remaining plant-specific fallback control, calibrated plant response, finer response checks and independent field validation |
 | Resource models | Temperature-constrained cooling, protected loads and renewable curtailment implemented; remaining calibrated thermal and workload parameters and real measured traces with clear reuse permissions |
-| Economics | Common real-EUR NPV, investment/fixed costs, replacement, fuel, emissions, annual or calendar-month peak tariffs, connection-delay value and reoptimized sensitivity implemented and analytically checked; remaining real-site assumptions, utility-specific tariff rules and seasonal commissioning, causal evidence |
+| Economics | Common real-EUR NPV, investment/fixed costs, replacement, fuel, emissions, annual or calendar-month peak tariffs, connection-delay value and reoptimized sensitivity implemented and analytically checked; remaining real-site assumptions, utility-specific tariff rules, initial commissioning state and partial-year redispatch, causal evidence |
 | Validation | Closed-form and synthetic full-year 15-minute cases implemented; a small exhaustive commitment cost cross-check is implemented; sampled failure injection and prefix invariance now tested; first normalized measured trace replay and repeatable benchmark artifact implemented; physical-unit measured demand replay implemented; remaining finer numerical tolerance, actuator/thermal calibration and independent field response evidence |
 | Hosted parity | Initial dedicated authenticated deployment and all eight operation browser/MCP/local parity verified; local busy/timeout tests pass. Production sustained-load, availability monitoring and external security review remain separate operational validation |
 | Usability | Documented examples, versioned request/response schema, clear error states, inspectable schedules, exportable results and limitations |
