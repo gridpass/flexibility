@@ -1,0 +1,72 @@
+{
+  "cases": [
+    {
+      "id": "two-hour",
+      "scenario": {
+        "interval_hours": 1,
+        "baseline_mw": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ],
+        "normal_import_cap_mw": 14,
+        "price_eur_mwh": 100,
+        "resources": [],
+        "events": [
+          {
+            "start": 2,
+            "end": 4,
+            "cap_mw": 8,
+            "notice_minutes": 60
+          }
+        ]
+      },
+      "weight": 1
+    },
+    {
+      "id": "three-hour",
+      "scenario": {
+        "interval_hours": 1,
+        "baseline_mw": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ],
+        "normal_import_cap_mw": 14,
+        "price_eur_mwh": 100,
+        "resources": [],
+        "events": [
+          {
+            "start": 2,
+            "end": 5,
+            "cap_mw": 8,
+            "notice_minutes": 60
+          }
+        ]
+      },
+      "weight": 0
+    }
+  ],
+  "options": [
+    {
+      "id": "battery",
+      "kind": "battery",
+      "max_power_mw": 8,
+      "max_energy_mwh": 20,
+      "cost_eur_per_mw": 1000,
+      "cost_eur_per_mwh": 1000,
+      "charge_efficiency": 1,
+      "discharge_efficiency": 1
+    }
+  ]
+}
