@@ -37,7 +37,8 @@ class AgentTests(unittest.IsolatedAsyncioTestCase):
                               "profile":"profile-check.json", "size":"capacity-sizing.json", "stress":"annual-stress.json",
                               "causal":"causal-replay.json", "economics":"lifecycle-economics.json"}
                     cases=[("screen",BASE), *((op,json.loads((EXAMPLES/file).read_text())) for op,file in examples.items()),
-                           ("dispatch",json.loads((EXAMPLES/"thermal-dispatch.json").read_text()))]
+                           ("dispatch",json.loads((EXAMPLES/"thermal-dispatch.json").read_text())),
+                           ("size",json.loads((EXAMPLES/"capacity-candidates.json").read_text()))]
                     for operation,payload in cases:
                         validate_evaluation("request",operation,payload)
                         result=await client.call_tool("evaluate_flexibility",{"operation":operation,"payload":payload})

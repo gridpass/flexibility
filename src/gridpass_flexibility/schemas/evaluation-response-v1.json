@@ -911,6 +911,58 @@
                     "engine_version"
                   ],
                   "additionalProperties": true
+                },
+                "comparison_complete": {
+                  "type": "boolean"
+                },
+                "selected_candidate_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "candidates": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "resources": {
+                        "type": "array"
+                      },
+                      "fixed_allocated_cost_eur": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "status": {
+                        "enum": [
+                          "solved",
+                          "infeasible",
+                          "solver_failed",
+                          "replay_failed"
+                        ]
+                      },
+                      "planning": {
+                        "type": "object"
+                      },
+                      "total_cost_eur": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "resources",
+                      "fixed_allocated_cost_eur",
+                      "status",
+                      "planning"
+                    ]
+                  }
                 }
               },
               "required": [
@@ -918,7 +970,21 @@
                 "message",
                 "evidence"
               ],
-              "additionalProperties": true
+              "additionalProperties": true,
+              "dependentRequired": {
+                "candidates": [
+                  "comparison_complete",
+                  "selected_candidate_id"
+                ],
+                "comparison_complete": [
+                  "candidates",
+                  "selected_candidate_id"
+                ],
+                "selected_candidate_id": [
+                  "candidates",
+                  "comparison_complete"
+                ]
+              }
             },
             {
               "type": "object",
@@ -1054,6 +1120,58 @@
                 "limitations": {
                   "type": "string",
                   "minLength": 1
+                },
+                "comparison_complete": {
+                  "type": "boolean"
+                },
+                "selected_candidate_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "candidates": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "resources": {
+                        "type": "array"
+                      },
+                      "fixed_allocated_cost_eur": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "status": {
+                        "enum": [
+                          "solved",
+                          "infeasible",
+                          "solver_failed",
+                          "replay_failed"
+                        ]
+                      },
+                      "planning": {
+                        "type": "object"
+                      },
+                      "total_cost_eur": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "resources",
+                      "fixed_allocated_cost_eur",
+                      "status",
+                      "planning"
+                    ]
+                  }
                 }
               },
               "required": [
@@ -1068,7 +1186,21 @@
                 "evidence",
                 "limitations"
               ],
-              "additionalProperties": true
+              "additionalProperties": true,
+              "dependentRequired": {
+                "candidates": [
+                  "comparison_complete",
+                  "selected_candidate_id"
+                ],
+                "comparison_complete": [
+                  "candidates",
+                  "selected_candidate_id"
+                ],
+                "selected_candidate_id": [
+                  "candidates",
+                  "comparison_complete"
+                ]
+              }
             }
           ]
         }

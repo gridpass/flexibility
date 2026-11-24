@@ -27,7 +27,7 @@ def evaluate_request(operation: str, payload: dict) -> dict:
         return evaluate_profile(payload["profile"], payload["scenarios"])
     if operation == "size":
         from .planning import size_capacity
-        return size_capacity(payload["cases"], payload["options"], payload.get("time_limit_s", 60))
+        return size_capacity(payload["cases"], payload["options"], payload.get("time_limit_s", 60), candidates=payload.get("candidates"))
     if operation == "stress":
         from .stress import test_commitment
         return test_commitment(payload["site"], payload["profile"], payload.get("outage_ids", []))

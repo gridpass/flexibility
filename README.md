@@ -34,6 +34,7 @@ gridpass-flexibility --compare-designs examples/design-comparison.json
 gridpass-flexibility --profile-schema
 gridpass-flexibility --profile examples/profile-check.json
 gridpass-flexibility --size examples/capacity-sizing.json
+gridpass-flexibility --size examples/capacity-candidates.json
 gridpass-flexibility --stress examples/annual-stress.json
 gridpass-flexibility --causal examples/causal-replay.json
 ```
@@ -46,7 +47,7 @@ The single-zone cooling model uses an exact sampled sensible-heat balance, tempe
 
 ## Capacity planning and commitment stress tests
 
-Size battery power, battery energy and generation capacity across several alternative connection scenarios. The optimizer chooses one shared design, minimizes explicitly weighted operating cost plus allocated investment cost, and replays the design in each case. A zero-weight stress case still has to be feasible.
+Size battery power, battery energy and generation capacity across several alternative connection scenarios. The optimizer chooses one shared design, minimizes explicitly weighted operating cost plus allocated investment cost, and replays the design in each case. A zero-weight stress case still has to be feasible. Explicit cooling and workload packages can also be compared across the same cases, optionally with shared battery and generator sizing. An incomplete candidate comparison returns no recommendation.
 
 Generate distributed and clustered annual restrictions from a defined commitment. Optionally test whole-horizon resource outages. A passing scenario is not proof of performance under all future event sequences; the model uses independent perfect-foresight schedules.
 

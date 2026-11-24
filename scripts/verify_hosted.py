@@ -46,13 +46,21 @@ def release_cases():
     b["scenario"]["resources"][0]["initial_mwh"] = 24
     c = deepcopy(b)
     c["scenario"]["normal_import_cap_mw"] = 1
-    return {name: ("economics", {"years":2,"real_discount_rate":.1,
+    cases = {name: ("economics", {"years":2,"real_discount_rate":.1,
                                  "alternatives":[alternative]})
             for name, alternative in [("commissioning", a), ("interyear", b),
                                       ("interyear_infeasible", c)]}
+    cases["capacity_candidates"] = ("size", json.loads((EXAMPLES / "capacity-candidates.json").read_text()))
+    return cases
 
 
 def assert_release_case(name, expected):
+    if name == "capacity_candidates":
+        if (not expected["comparison_complete"] or expected["selected_candidate_id"] != "combined"
+                or abs(expected["total_cost_eur"]-8120)>1e-5
+                or [c["status"] for c in expected["candidates"]] != ["infeasible","infeasible","solved","solved"]):
+            raise RuntimeError("Capacity package acceptance failed")
+        return
     if name not in ("commissioning", "interyear", "interyear_infeasible"):
         return
     case = expected["cases"][0]
@@ -80,7 +88,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", default="https://gridpass.co")
     parser.add_argument("--operation", choices=tuple(CASES), action="append")
-    parser.add_argument("--release-cases", action="store_true", help="Also probe commissioning and inter-year state continuity")
+    parser.add_argument("--release-cases", action="store_true", help="Also probe commissioning, inter-year continuity and equipment package selection")
     args = parser.parse_args()
     base = args.base.rstrip("/")
     headers = {"Origin": base, "Content-Type": "application/json",

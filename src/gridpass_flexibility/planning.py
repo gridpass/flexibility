@@ -5,6 +5,7 @@ the battery MW/MWh and generator MW investments are equal in every case.
 """
 from __future__ import annotations
 from copy import deepcopy
+from time import monotonic
 from .dispatch import _build_model, _digest, _number, evaluate
 from . import __version__
 from .validation import checked_solution
@@ -46,7 +47,7 @@ def _resource(o, power, energy=None, availability=1):
         if "fuel_budget_mwh" in o:r["fuel_budget_mwh"]=o["fuel_budget_mwh"]
     return r
 
-def size_capacity(cases, options, time_limit_s=60):
+def size_capacity(cases, options, time_limit_s=60, *, candidates=None, _deadline=None):
     """Minimize allocated capex plus weighted operating costs across hard-cap cases.
 
     `cases` contains id, scenario, weight, and optional availability overrides
@@ -59,8 +60,12 @@ def size_capacity(cases, options, time_limit_s=60):
     from scipy.optimize import linprog
     from scipy.sparse import block_diag, coo_matrix, vstack
     if not isinstance(cases,list) or not 1<=len(cases)<=32:raise ValueError("1–32 cases required")
-    if not isinstance(options,list) or not 1<=len(options)<=16:raise ValueError("1–16 capacity options required")
+    if not isinstance(options,list) or len(options)>16:raise ValueError("At most 16 capacity options")
     time_limit=_number(time_limit_s,"solver time limit",.1,600)
+    deadline=monotonic()+time_limit if _deadline is None else _deadline
+    if candidates is not None:
+        return _compare_candidates(cases,options,candidates,time_limit,deadline)
+    if not options and _deadline is None:raise ValueError("1–16 capacity options required")
     opts=[_option(x) for x in options]
     by_name={o["id"]:o for o in opts}
     if len(by_name)!=len(opts):raise ValueError("Duplicate capacity option")
@@ -74,6 +79,7 @@ def size_capacity(cases, options, time_limit_s=60):
         scenario["resources"]=scenario.get("resources",[])+[
             _resource(o,o["max_power_mw"],o.get("max_energy_mwh"),availability.get(o["id"],1)) for o in opts]
         m=_build_model(scenario,by_name,hard_caps=True)
+        if m["integrality"].any():raise ValueError("Continuous planning requires nondiscrete resources")
         local=m["operating"].copy()*weight
         for key,col in m["sizing"].items():
             sizes.setdefault(key,[]).append(offset+col)
@@ -93,11 +99,14 @@ def size_capacity(cases, options, time_limit_s=60):
         eq_rhs=np.append(eq_rhs,np.zeros(n))
     ub=block_diag([m["A_ub"] for m in models],format="csc")
     ub_rhs=np.concatenate([m["b_ub"] for m in models])
-    sol=linprog(np.asarray(objective),A_ub=ub,b_ub=ub_rhs,A_eq=eq,b_eq=eq_rhs,bounds=bounds,method="highs",
-                options={"time_limit":time_limit})
-    sol=checked_solution(sol,bounds,eq,eq_rhs,ub,ub_rhs)
     evidence={"engine_version":__version__,"solver":"scipy.optimize.linprog/HiGHS","scipy_version":scipy.__version__,
               "input_sha256":_digest({"cases":cases,"options":options}),"evidence_type":"finite_scenario_capacity_planning"}
+    remaining=deadline-monotonic()
+    if remaining<=0:
+        return {"status":"solver_failed","message":"Shared solver time budget exhausted","evidence":evidence}
+    sol=linprog(np.asarray(objective),A_ub=ub,b_ub=ub_rhs,A_eq=eq,b_eq=eq_rhs,bounds=bounds,method="highs",
+                options={"time_limit":remaining})
+    sol=checked_solution(sol,bounds,eq,eq_rhs,ub,ub_rhs)
     if not sol.success:
         return {"status":"infeasible" if sol.status==2 else "solver_failed","message":sol.message,"evidence":evidence}
     selected={name:{} for name in by_name}
@@ -109,7 +118,7 @@ def size_capacity(cases, options, time_limit_s=60):
         scenario=deepcopy(c["scenario"]);availability=c.get("new_resource_availability",{})
         scenario["resources"]=scenario.get("resources",[])+[
             _resource(o,selected[o["id"]]["power_mw"],selected[o["id"]].get("energy_mwh"),availability.get(o["id"],1)) for o in opts]
-        check=evaluate(scenario)
+        check=evaluate(scenario,_deadline=deadline)
         if check["status"]=="solved":weighted+=weight*check["operating_cost_eur"]
         checks.append({"id":c["id"],"weight":weight,"status":check["status"],"feasible":check.get("feasible",False),
                        "uncovered_mwh":check.get("uncovered_mwh"),"operating_cost_eur":check.get("operating_cost_eur"),
@@ -120,4 +129,81 @@ def size_capacity(cases, options, time_limit_s=60):
             "cases":checks,"all_cases_feasible":valid,"evidence":evidence,
             "limitations":"Independent perfect-foresight schedules, continuous capacity and dispatch. Feasible only for the supplied cases. Costs must refer to a consistent horizon; no annualization is inferred."}
     result["evidence"]["result_sha256"]=_digest(result)
+    return result
+
+
+def _compare_candidates(cases, options, candidates, time_limit, deadline):
+    """Enumerate explicit equipment packages; optimize shared continuous assets
+    conditional on each package using the same hard-cap LP and dispatch replay.
+    A failed solve/replay is not evidence of infeasibility or optimality.
+    """
+    import scipy
+    if not isinstance(candidates,list) or not 1<=len(candidates)<=16:
+        raise ValueError("1–16 candidate packages required")
+    ids=set()
+    option_ids={o["id"] for o in options}
+    new_ids=set(option_ids)
+    for candidate in candidates:
+        if not isinstance(candidate,dict) or set(candidate)!={"id","resources","allocated_cost_eur"}:
+            raise ValueError("Candidate requires id, resources, allocated_cost_eur")
+        name=candidate["id"]
+        if not isinstance(name,str) or not name or name in ids:
+            raise ValueError("Candidate IDs must be unique strings")
+        ids.add(name)
+        _number(candidate["allocated_cost_eur"],"candidate allocated cost",0,1e12)
+        resources=candidate["resources"]
+        if not isinstance(resources,list) or len(resources)>16:
+            raise ValueError("At most 16 fixed resources per candidate")
+        resource_ids=set()
+        for r in resources:
+            if r["kind"] not in ("thermal_cooling","workload","cooling","flexible_load"):
+                raise ValueError("Candidate resources must be cooling or flexible workload")
+            rid=r["id"]
+            if not isinstance(rid,str) or not rid or rid in resource_ids or rid in option_ids:
+                raise ValueError("Candidate resource IDs must be unique and distinct from options")
+            resource_ids.add(rid)
+        new_ids.update(resource_ids)
+    for c in cases:
+        if set(c.get("new_resource_availability",{}))-new_ids:
+            raise ValueError("Unknown new resource availability override")
+    evidence={"engine_version":__version__,"solver":"scipy.optimize.linprog/HiGHS",
+              "scipy_version":scipy.__version__,"evidence_type":"finite_candidate_capacity_planning",
+              "input_sha256":_digest({"cases":cases,"options":options,"candidates":candidates})}
+    rows=[]; winner=None; incomplete=False
+    for candidate in candidates:
+        conditional=[]
+        for c in cases:
+            case=deepcopy(c)
+            overrides=case.get("new_resource_availability",{})
+            case["new_resource_availability"]={k:v for k,v in overrides.items() if k in option_ids}
+            fixed=deepcopy(candidate["resources"])
+            for r in fixed:
+                if r["id"] in overrides:r["availability"]=overrides[r["id"]]
+            scenario=case["scenario"]
+            scenario["resources"]=scenario.get("resources",[])+fixed
+            conditional.append(case)
+        result=size_capacity(conditional,options,time_limit,_deadline=deadline)
+        cost=candidate["allocated_cost_eur"]
+        row={"id":candidate["id"],"resources":candidate["resources"],
+             "fixed_allocated_cost_eur":cost,"status":result["status"],"planning":result}
+        if result["status"]=="solved" and result["all_cases_feasible"]:
+            row["total_cost_eur"]=cost+result["total_cost_eur"]
+            if winner is None or (row["total_cost_eur"],row["id"])<(winner["total_cost_eur"],winner["id"]):
+                winner=row
+        elif result["status"]!="infeasible":
+            incomplete=True
+        rows.append(row)
+    extra={"candidates":rows,"comparison_complete":not incomplete,
+           "selected_candidate_id":None if incomplete or winner is None else winner["id"]}
+    if incomplete or winner is None:
+        result={"status":"solver_failed" if incomplete else "infeasible",
+                "message":"Candidate comparison incomplete" if incomplete else "No feasible candidate",
+                "evidence":evidence,**extra}
+    else:
+        result={**winner["planning"],**extra,"evidence":evidence}
+        result["allocated_capex_eur"]+=winner["fixed_allocated_cost_eur"]
+        result["total_cost_eur"]=winner["total_cost_eur"]
+        result["optimizer_objective_eur"]+=winner["fixed_allocated_cost_eur"]
+        result["limitations"]+=" Least cost only among supplied fixed packages, not a continuous cooling/workload optimum."
+    evidence["result_sha256"]=_digest(result)
     return result

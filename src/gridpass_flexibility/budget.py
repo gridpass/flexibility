@@ -27,7 +27,14 @@ def check_budget(operation, payload):
     elif operation == "size":
         if len(payload["cases"])>32 or len(payload["options"])>16:raise ValueError("Too many cases or capacity options")
         if payload.get("time_limit_s",60)>60:raise ValueError("Agent sizing time limit is 60 seconds")
-        work=sum(effort(c["scenario"],len(payload["options"])) for c in payload["cases"])*2
+        candidates=payload.get("candidates")
+        if candidates is None:
+            work=sum(effort(c["scenario"],len(payload["options"])) for c in payload["cases"])*2
+        else:
+            if not 1<=len(candidates)<=16 or any(len(d["resources"])>16 for d in candidates):
+                raise ValueError("Agent sizing candidate limit exceeded")
+            work=sum(effort({**c["scenario"],"resources":c["scenario"].get("resources",[])+d["resources"]},
+                            len(payload["options"])) for c in payload["cases"] for d in candidates)*2
     elif operation == "economics":
         alternatives=payload["alternatives"]; sensitivities=payload.get("sensitivities",[])
         if not 1<=len(alternatives)<=8 or len(sensitivities)>8:raise ValueError("Agent economics case limit exceeded")
