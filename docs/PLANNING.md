@@ -36,6 +36,6 @@ A passing result refers only to the modeled test cases. Response times shorter t
 
 ## Open gaps
 
-- Causal dispatch with uncertain event timing and outages rather than perfect foresight.
-- Equipment-specific nonlinear thermal and workload behavior, forced-trip and restart behavior. Discrete generator start/run and battery inverter modes are now available in fixed-capacity dispatch.
+- The separate sampled causal replay evaluates uncertain event timing and outages; continuous capacity sizing itself remains perfect-foresight.
+- Cooling and workload capacities are currently fixed inputs to dispatch and explicit design comparison, not continuous sizing options. Least-cost selection across hard-cap cases remains to be verified. Discrete generator start/run, forced-trip/restart replay and battery inverter modes are available in fixed-capacity dispatch.
 - Site-specific financial analysis, reliability probabilities, data-driven validation and field acceptance.

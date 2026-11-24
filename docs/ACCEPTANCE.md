@@ -153,3 +153,15 @@ Do not mark a gate complete based on documentation alone. Keep issues #1–5 cur
 ## Consolidated v0.3.10 release candidate
 
 - Packages interface conformance and sequential annual redispatch with the existing solver and unchanged eight-operation gateway. The opt-in hosted probe adds both a feasible carried-state recharge-cost case and a no-headroom case that must reject the recommendation. Local acceptance tests exercise the probes and reject a corrupted cost. Deployment and live parity are not implied by this version bump.
+
+## Verified in production on 2026-11-24 (v0.3.10)
+
+- Release commit e73769d (#34), 162 installed-package tests passed; Python 3.10/3.12 PR, branch, main and tag CI green. Upgraded only the existing dedicated service, with NumPy 2.5.5 and SciPy 1.18.1 pinned. No gateway or infrastructure purchase.
+- Eleven synthetic requests (eight operations, July commissioning, feasible inter-year recharge and infeasible inter-year recharge) and all 33 local/browser/MCP responses passed versioned schema checks and exact JSON parity. Independent assertions verify the 24 MWh carried deficit, EUR 2,400 additional recharge cost and the no-headroom 24 MWh gap with no recommendation. Reproduce from the tagged installed package with `python scripts/verify_hosted.py --release-cases`.
+- Public calculator HTTP 200; HTML has 19 numeric fields (3 primary, 16 optional); browser-origin legacy POST HTTP 200, 5 MW required and 5 MW uncovered with zero assets. Invalid advanced request 422, consent rejection, private contacts 401 and unauthenticated loopback upstream 401. Service active, loopback-only, DynamicUser, 2 GiB memory and one CPU. No sustained-load or field validation claim.
+
+## Release audit: remaining independently testable scope
+
+The consolidated release satisfies the profile/schema, sampled causal replay, discrete dispatch, measured-demand replay, offline thermal-identification method, lifecycle inter-year redispatch and hosted parity checks described above. The following engineering gap remains against issue #2: continuous shared sizing currently supports battery and generation only; cooling and workload are fixed-resource candidates. Verify least-cost selection of cooling/workload capacities across multiple hard-cap scenarios and fail closed if a candidate solve is incomplete. Use the existing solver and explicit candidate comparison where continuous parameters are not linear. Do not treat the existing battery/generator sizing example as evidence for these other resources.
+
+External acceptance remains separate: actual calibrated site parameters and commissioning state, approved site-specific fallback/protection, measured actuator and facility-level response, operator tariff and connection rules, and independent field acceptance. Formal EPRI mapping would require authoritative semantics and rights; it is not a release goal. Sustained production load and external security/availability review are separate operational validation, not inferred from smoke tests.

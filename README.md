@@ -63,7 +63,7 @@ pip install ".[agent]"
 gridpass-flexibility-mcp
 ```
 
-The default transport is stdio. The read-only `evaluate_flexibility` tool accepts an operation (`screen`, `dispatch`, `compare_designs`, `profile`, `size`, `stress`, or `causal`) and the corresponding example JSON payload. For a local HTTP client, run `gridpass-flexibility-mcp --transport streamable-http` and connect to `http://127.0.0.1:8765/mcp`. See [agent integration](docs/MCP.md).
+The default transport is stdio. The read-only `evaluate_flexibility` tool accepts an operation (`screen`, `dispatch`, `compare_designs`, `profile`, `size`, `stress`, `causal`, or `economics`) and the corresponding example JSON payload. For a local HTTP client, run `gridpass-flexibility-mcp --transport streamable-http` and connect to `http://127.0.0.1:8765/mcp`. See [agent integration](docs/MCP.md).
 
 ## Screening model scope
 
