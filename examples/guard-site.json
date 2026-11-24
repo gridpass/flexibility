@@ -1,0 +1,420 @@
+{
+  "schema": "gridpass.guard.fixture.v0.1",
+  "contract": {
+    "site": "synthetic-site-01",
+    "limits": {
+      "min_w": -100000,
+      "max_w": 1000000
+    },
+    "fallback": {
+      "min_w": 0,
+      "max_w": 200000
+    },
+    "fallback_target_w": 200000,
+    "max_message_age_s": 30,
+    "max_meter_age_s": 2
+  },
+  "steps": [
+    {
+      "case": "valid request clipped",
+      "now_s": 0,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 0
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000
+      },
+      "operator": {
+        "seq": 1,
+        "payload": {
+          "min_w": -50000,
+          "max_w": 500000
+        },
+        "expires_s": 20
+      },
+      "ems": {
+        "seq": 1,
+        "payload": {
+          "target_w": 750000
+        }
+      },
+      "expect": {
+        "policy_status": "accepted",
+        "request_status": "accepted",
+        "allowed_w": 500000,
+        "observed_w": 500000,
+        "state": "normal",
+        "observed_excursion": false
+      }
+    },
+    {
+      "case": "EMS cannot issue operator policy",
+      "now_s": 1,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 1
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000
+      },
+      "operator": {
+        "seq": 2,
+        "payload": {
+          "min_w": -50000,
+          "max_w": 900000
+        },
+        "signer": "ems"
+      },
+      "ems": {
+        "seq": 2,
+        "payload": {
+          "target_w": 900000
+        }
+      },
+      "expect": {
+        "policy_status": "invalid_signature",
+        "allowed_w": 500000,
+        "policy_seq": 1,
+        "state": "normal"
+      }
+    },
+    {
+      "case": "export bound enforced",
+      "now_s": 2,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 2
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000
+      },
+      "ems": {
+        "seq": 3,
+        "payload": {
+          "target_w": -100000
+        }
+      },
+      "expect": {
+        "allowed_w": -50000,
+        "observed_w": -50000,
+        "state": "normal"
+      }
+    },
+    {
+      "case": "outside static contract",
+      "now_s": 3,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 3
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000
+      },
+      "operator": {
+        "seq": 2,
+        "payload": {
+          "min_w": -50000,
+          "max_w": 1200000
+        }
+      },
+      "ems": {
+        "seq": 4,
+        "payload": {
+          "target_w": 700000
+        }
+      },
+      "expect": {
+        "policy_status": "outside_contract",
+        "allowed_w": 500000,
+        "policy_seq": 1
+      }
+    },
+    {
+      "case": "replay after trusted restart",
+      "now_s": 4,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 4
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000
+      },
+      "restart": true,
+      "ems": {
+        "seq": 4,
+        "payload": {
+          "target_w": 700000
+        }
+      },
+      "expect": {
+        "request_status": "replay",
+        "allowed_w": 200000,
+        "state": "fallback"
+      }
+    },
+    {
+      "case": "wrong site",
+      "now_s": 5,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 5
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000
+      },
+      "ems": {
+        "seq": 5,
+        "payload": {
+          "target_w": 400000
+        },
+        "site": "other-site"
+      },
+      "expect": {
+        "request_status": "wrong_authority_or_audience",
+        "allowed_w": 200000,
+        "state": "fallback"
+      }
+    },
+    {
+      "case": "expired request",
+      "now_s": 6,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 6
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000
+      },
+      "ems": {
+        "seq": 5,
+        "payload": {
+          "target_w": 400000
+        },
+        "issued_s": 0,
+        "expires_s": 6
+      },
+      "expect": {
+        "request_status": "stale_or_invalid_time",
+        "state": "fallback"
+      }
+    },
+    {
+      "case": "link down",
+      "now_s": 7,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 7
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000
+      },
+      "link_up": false,
+      "ems": {
+        "seq": 5,
+        "payload": {
+          "target_w": 750000
+        }
+      },
+      "expect": {
+        "request_status": "link_down",
+        "allowed_w": 200000,
+        "state": "fallback",
+        "observed_w": 200000
+      }
+    },
+    {
+      "case": "stale pre meter",
+      "now_s": 8,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 0
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000
+      },
+      "ems": {
+        "seq": 5,
+        "payload": {
+          "target_w": 400000
+        }
+      },
+      "expect": {
+        "allowed_w": 200000,
+        "state": "unverified",
+        "pre_meter_w": null
+      }
+    },
+    {
+      "case": "insufficient capacity",
+      "now_s": 9,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 9
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 100000,
+        "increase_w": 250000
+      },
+      "ems": {
+        "seq": 6,
+        "payload": {
+          "target_w": 750000
+        }
+      },
+      "expect": {
+        "allowed_w": 500000,
+        "acknowledged_w": 650000,
+        "observed_w": 650000,
+        "state": "unverified",
+        "observed_excursion": true
+      }
+    },
+    {
+      "case": "actuator failure",
+      "now_s": 10,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 10
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000,
+        "ack": false
+      },
+      "ems": {
+        "seq": 7,
+        "payload": {
+          "target_w": 750000
+        }
+      },
+      "expect": {
+        "allowed_w": 500000,
+        "acknowledged_w": null,
+        "observed_w": 750000,
+        "state": "unverified",
+        "observed_excursion": true
+      }
+    },
+    {
+      "case": "missing post meter",
+      "now_s": 11,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 11
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000,
+        "meter_available": false
+      },
+      "ems": {
+        "seq": 8,
+        "payload": {
+          "target_w": 400000
+        }
+      },
+      "expect": {
+        "allowed_w": 400000,
+        "observed_w": null,
+        "state": "unverified",
+        "observed_excursion": null
+      }
+    },
+    {
+      "case": "expired operator policy",
+      "now_s": 20,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 20
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000
+      },
+      "ems": {
+        "seq": 9,
+        "payload": {
+          "target_w": 750000
+        }
+      },
+      "expect": {
+        "allowed_w": 200000,
+        "state": "fallback"
+      }
+    },
+    {
+      "case": "more restrictive operator policy",
+      "now_s": 21,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 21
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000
+      },
+      "operator": {
+        "seq": 2,
+        "payload": {
+          "min_w": -50000,
+          "max_w": 100000
+        },
+        "expires_s": 30
+      },
+      "ems": {
+        "seq": 10,
+        "payload": {
+          "target_w": 500000
+        }
+      },
+      "expect": {
+        "policy_status": "accepted",
+        "allowed_w": 100000,
+        "observed_w": 100000,
+        "state": "normal"
+      }
+    },
+    {
+      "case": "fallback cannot widen last restriction",
+      "now_s": 22,
+      "meter": {
+        "w": 500000,
+        "sampled_s": 22
+      },
+      "plant": {
+        "baseline_w": 750000,
+        "reduction_w": 850000,
+        "increase_w": 250000
+      },
+      "link_up": false,
+      "expect": {
+        "allowed_w": 100000,
+        "state": "fallback"
+      }
+    }
+  ]
+}
