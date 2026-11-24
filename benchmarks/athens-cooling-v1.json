@@ -1,0 +1,18 @@
+{
+  "active_minutes": 364,
+  "all_cold_kwh": 50.89167823333307,
+  "all_electric_kwh": 13.475949999999994,
+  "fit_cop": 3.7582437391009287,
+  "fit_cycles": 12,
+  "holdout_absolute_relative_energy_error": 0.01514781854663021,
+  "holdout_cop": 3.791991089675358,
+  "holdout_cycles": 12,
+  "holdout_mae_kwh_per_cycle": 0.03486033515053607,
+  "license": "CC-BY-4.0",
+  "mapping_verified": false,
+  "max_abs_cycle_balance_residual_over_electric": 0.18436289260765626,
+  "sha256": "be6b34ac0ba9f8f4c908d74892b0e77fdb872fd114a674b3ce81309db3bec395",
+  "site_control_validated": false,
+  "source_doi": "10.5281/zenodo.8012958",
+  "water_kwh_m3_k": 1.163
+}
