@@ -32,7 +32,7 @@ class AgentTests(unittest.IsolatedAsyncioTestCase):
                     await client.initialize()
                     tools=await client.list_tools()
                     self.assertEqual([t.name for t in tools.tools],["evaluate_flexibility"])
-                    for operation,payload in [("screen",BASE),("dispatch",json.loads((EXAMPLES/"chronological.json").read_text())),("causal",json.loads((EXAMPLES/"causal-replay.json").read_text()))]:
+                    for operation,payload in [("screen",BASE),("dispatch",json.loads((EXAMPLES/"chronological.json").read_text())),("causal",json.loads((EXAMPLES/"causal-replay.json").read_text())),("dispatch",json.loads((EXAMPLES/"thermal-dispatch.json").read_text()))]:
                         result=await client.call_tool("evaluate_flexibility",{"operation":operation,"payload":payload})
                         self.assertFalse(result.isError)
                         self.assertEqual(result.structuredContent,evaluate_request(operation,payload))

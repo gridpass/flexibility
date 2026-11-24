@@ -45,6 +45,8 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False, *, causal_stat
     n=len(demand)
     if n*dt>8760+EPS: raise ValueError("Horizon exceeds 8760 hours")
     demand=_series(scenario,"baseline_mw",n)
+    protected=_series({"protected":scenario.get("protected_load_mw",0)},"protected",n)
+    cooling_baseline=[0.0]*n
     normal_cap=_series(scenario,"normal_import_cap_mw",n)
     prices=_series(scenario,"price_eur_mwh",n)
     caps=list(normal_cap)
@@ -208,6 +210,39 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False, *, causal_stat
                     constraint([(discharge[t],1),(mode[t],available[t])],available[t])
                 trace["charging_mode"]=mode
             resources.append((name,kind,trace))
+        elif kind=="renewable":
+            # Non-dispatchable available generation may be curtailed; no export.
+            if response!=0:raise ValueError("Renewable availability is exogenous; response_minutes must be zero")
+            gen=series(0,[p*a for a in availability],cost*dt)
+            for t in range(n):balance[t].append((gen[t],1))
+            resources.append((name,kind,{"generation_mw":gen}))
+        elif kind=="thermal_cooling":
+            from .thermal import parameters, coefficients
+            th=parameters(spec,n)
+            decay,gain=coefficients(th["capacitance"],th["conductance"],dt)
+            # Input demand already contains the declared baseline cooling power.
+            # Replace that contribution with scheduled cooling, not a second load.
+            base=th["baseline_cooling_mw"]
+            for t in range(n):cooling_baseline[t]+=base[t]
+            cooling=[variable(min(base[t],p*availability[t]) if not ready[t] else 0,
+                              p*availability[t],cost*dt) for t in range(n)]
+            temp=[variable(th["lower"],th["upper"]) for _ in range(n)]
+            for t in range(n):
+                rhs=(1-decay)*th["ambient_c"][t]+gain*th["heat_gain_mw"][t]
+                terms=[(temp[t],1),(cooling[t],gain*th["cop"][t])]
+                if t:terms.append((temp[t-1],-decay))
+                else:rhs+=decay*th["initial"]
+                constraint(terms,rhs,True)
+                balance[t].append((cooling[t],-1))
+            constraint([(temp[-1],1)],th["terminal"])
+            target=causal_state.get("thermal_targets",{}).get(name)
+            if target is not None:
+                for t in range(n):
+                    if event_at[t] is None:
+                        deficit=variable(0,None)
+                        constraint([(temp[t],th["capacitance"]),(deficit,-1)],target*th["capacitance"])
+                        recovery_columns.append(deficit)
+            resources.append((name,kind,{"cooling_mw":cooling,"temperature_c":temp}))
         elif kind in ("workload","cooling","flexible_load"):
             # Energy-equivalent shift budget. No lost workloads; deferred energy must
             # be recovered before the specified deadline and within available cap.
@@ -241,8 +276,10 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False, *, causal_stat
     # No combination may defer more than the underlying total load.
     for t in range(n):
         shed=[(cols["shift_mw"][t],1) for _,_,cols in resources if "shift_mw" in cols]
-        if shed:constraint(shed,demand[t])
-        constraint(balance[t],demand[t],True)
+        shiftable=demand[t]-protected[t]-cooling_baseline[t]
+        if shiftable < -EPS:raise ValueError("Protected and baseline cooling loads exceed total demand")
+        if shed:constraint(shed,max(0,shiftable))
+        constraint(balance[t],demand[t]-cooling_baseline[t],True)
     def matrix(r,c,v,b):return coo_matrix((v,(r,c)),shape=(len(b),len(bounds))).tocsc()
     return {"bounds":bounds,"operating":np.asarray(operating),"A_ub":matrix(ub_r,ub_c,ub_v,ub_b),
             "b_ub":np.asarray(ub_b),"A_eq":matrix(eq_r,eq_c,eq_v,eq_b),"b_eq":np.asarray(eq_b),
@@ -314,7 +351,7 @@ def evaluate(scenario: dict, *, _causal_state=None, _deadline=None) -> dict:
             "grid_energy_cost_eur":sum(g[t]*prices[t]*dt for t in range(n)),
             "commitment_cost_eur":float(commitment_cost),
             "operating_cost_eur":float(commitment_cost + sum(g[t]*prices[t]*dt for t in range(n)) + sum(
-                (sum(x[i] for key in ("generation_mw","discharge_mw","shift_mw") for i in cols.get(key,[]))
+                (sum(x[i] for key in ("generation_mw","discharge_mw","shift_mw","cooling_mw") for i in cols.get(key,[]))
                  *dt*next(float(sp.get("variable_cost_eur_mwh",0)) for sp in scenario.get("resources",[]) if sp["id"]==name))
                 for name,_,cols in resources)),
             "schedule":{"grid_import_mw":g,"import_cap_mw":caps,"uncovered_mw":violations,
@@ -336,6 +373,16 @@ def evaluate(scenario: dict, *, _causal_state=None, _deadline=None) -> dict:
             diagnostics.append({"resource":name,"kind":kind,"total_generated_mwh":total,
                 "fuel_budget_reached": "fuel_budget_mwh" in spec and total>=float(spec["fuel_budget_mwh"])-1e-5,
                 "rated_power_reached_during_gap":any(trace["generation_mw"][t]>=float(spec["power_mw"])-1e-5 for t in active)})
+        elif kind=="thermal_cooling":
+            diagnostics.append({"resource":name,"kind":kind,
+                "maximum_temperature_c":max(trace["temperature_c"]),
+                "minimum_temperature_c":min(trace["temperature_c"]),
+                "temperature_limit_reached_during_gap":any(trace["temperature_c"][t]>=spec["max_temp_c"]-1e-5 for t in active)})
+        elif kind=="renewable":
+            avail=_series({"a":spec.get("availability",1)},"a",n)
+            diagnostics.append({"resource":name,"kind":kind,
+                "generated_mwh":sum(trace["generation_mw"])*dt,
+                "curtailed_mwh":sum(max(0,spec["power_mw"]*a-g) for a,g in zip(avail,trace["generation_mw"]))*dt})
         else:
             diagnostics.append({"resource":name,"kind":kind,"peak_deferred_mwh":max(trace["backlog_mwh"]),
                 "shift_budget_reached_during_gap":any(trace["backlog_mwh"][t]>=float(spec["shift_budget_mwh"])-1e-5 for t in active)})

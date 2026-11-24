@@ -67,3 +67,7 @@ Independent profile schema v1 is packaged and validated. Annual, duration, notic
 ## Implementation checkpoint (2026-11-24, v0.3.3)
 
 A sampled causal policy now re-plans against observed conditions and announced events; unobserved future demand, availability, price and ordinary cap are persistence forecasts. The same LP/MILP physical model carries battery SOC, generator fuel and dwell time, and deferred workload deadlines. Tests distinguish perfect-foresight feasibility from surprise-event performance and reproduce forced-trip/restart constraints. The causal operation is available locally via CLI and the single MCP tool, with bounded solver time and explicit partial failure. See [CAUSAL.md](CAUSAL.md). This is modeled evidence, not equipment or grid acceptance.
+
+## Implementation checkpoint (v0.3.4)
+
+The physical resource model now includes exact sampled single-zone sensible heat balance, renewable generation and curtailment, and aggregate protected-load accounting. The same constraints are used by causal replay and chronological dispatch. See [thermal specification](THERMAL.md) for equations, source dataset candidates, and explicit calibration limits. No measured dataset was fitted or republished in this revision.

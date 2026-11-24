@@ -28,6 +28,7 @@ def replay(scenario: dict, lookahead_intervals: int=24, time_limit_s: float=60) 
     demand=_series(scenario,"baseline_mw",n)
     normal=_series(scenario,"normal_import_cap_mw",n)
     prices=_series(scenario,"price_eur_mwh",n)
+    protected=_series({"protected":scenario.get("protected_load_mw",0)},"protected",n)
     actual_events=[];active=[None]*n
     for raw in scenario.get("events",[]):
         start=_index(raw["start"],"event start",n);end=_index(raw["end"],"event end",n)
@@ -43,7 +44,7 @@ def replay(scenario: dict, lookahead_intervals: int=24, time_limit_s: float=60) 
     specs=deepcopy(scenario.get("resources",[]))
     if len(specs)>64 or len({r["id"] for r in specs})!=len(specs):
         raise ValueError("Resource IDs must be unique; maximum 64")
-    availability={};state={};trace={};targets={}
+    availability={};state={};trace={};targets={};thermal={};thermal_targets={}
     for r in specs:
         rid=r["id"];kind=r["kind"]
         p=_number(r["power_mw"],rid+" power")
@@ -63,6 +64,14 @@ def replay(scenario: dict, lookahead_intervals: int=24, time_limit_s: float=60) 
                 raise ValueError("Inconsistent initial generator state")
             state[rid]={"mw":initial,"on":on,"age":age,
                         "fuel":_number(r["fuel_budget_mwh"],rid+" fuel") if "fuel_budget_mwh" in r else None}
+        elif kind=="thermal_cooling":
+            from .thermal import parameters
+            th=parameters(r,n)
+            thermal[rid]=th
+            thermal_targets[rid]=th["terminal"]
+            state[rid]={"temperature_c":th["initial"]}
+        elif kind=="renewable":
+            state[rid]={}
         elif kind in ("workload","cooling","flexible_load"):
             delay=_number(r["max_delay_hours"],rid+" delay",dt,8760)
             state[rid]={"queue":[],"delay":max(1,math.floor(delay/dt+1e-7))}
@@ -89,7 +98,7 @@ def replay(scenario: dict, lookahead_intervals: int=24, time_limit_s: float=60) 
             window_events.append({"start":start-t,"end":min(end,e["end"])-t,"cap_mw":e["cap_mw"],
                                   "notice_minutes":e["notice_minutes"]+max(0,t-e["start"])*dt*60})
         window={"interval_hours":dt,"baseline_mw":[demand[t]]*width,
-                "normal_import_cap_mw":normal[t],"price_eur_mwh":prices[t],"events":window_events,"resources":[]}
+                "normal_import_cap_mw":normal[t],"price_eur_mwh":prices[t],"protected_load_mw":protected[t],"events":window_events,"resources":[]}
         backlogs={}
         trips=[]
         for r in specs:
@@ -118,14 +127,23 @@ def replay(scenario: dict, lookahead_intervals: int=24, time_limit_s: float=60) 
                     s["initial_on"]=st["on"]
                     s["initial_state_hours"]=min(8760,st["age"])
                 if st["fuel"] is not None:s["fuel_budget_mwh"]=st["fuel"]
+            elif kind=="thermal_cooling":
+                from .thermal import SERIES_FIELDS
+                for field in SERIES_FIELDS:s[field]=thermal[rid][field][t]
+                s["initial_temp_c"]=st["temperature_c"]
+                # Terminal recovery is checked at the real end, not imposed at
+                # every artificial horizon boundary.
+                s["terminal_max_temp_c"]=s["max_temp_c"]
+            elif kind=="renewable":
+                pass
             else:
                 backlogs[rid]=[(due-t,amount) for due,amount in st["queue"]]
             window["resources"].append(s)
         result["forced_trips"].extend(trips)
         result["observations"].append({"interval":t,"baseline_mw":demand[t],"normal_import_cap_mw":normal[t],
-            "price_eur_mwh":prices[t],"availability":{rid:a[t] for rid,a in availability.items()},
+            "price_eur_mwh":prices[t],"protected_load_mw":protected[t],"thermal_inputs":{rid:{key:th[key][t] for key in ("ambient_c","heat_gain_mw","cop","baseline_cooling_mw")} for rid,th in thermal.items()},"availability":{rid:a[t] for rid,a in availability.items()},
             "announced_events":[{k:v for k,v in e.items() if k!="reveal"} for e in known]})
-        plan=evaluate(window,_causal_state={"backlogs":backlogs,"recharge_targets":targets},_deadline=deadline)
+        plan=evaluate(window,_causal_state={"backlogs":backlogs,"recharge_targets":targets,"thermal_targets":thermal_targets},_deadline=deadline)
         if plan["status"]!="solved":
             result.update(status="replay_failed",failure={"interval":t,"message":plan["message"],
                 "solver_status":plan.get("solver_status"),"observed_backlog_mwh":{rid:sum(a for _,a in q) for rid,q in backlogs.items()}})
@@ -152,6 +170,11 @@ def replay(scenario: dict, lookahead_intervals: int=24, time_limit_s: float=60) 
                 st["on"]=on
                 if st["fuel"] is not None:st["fuel"]=max(0,st["fuel"]-st["mw"]*dt)
                 cost+=st["mw"]*dt*variable+action.get("startup",0)*r.get("startup_cost_eur",0)+action.get("online",0)*dt*r.get("online_cost_eur_per_hour",0)
+            elif kind=="thermal_cooling":
+                st["temperature_c"]=min(r["max_temp_c"],max(r["min_temp_c"],action["temperature_c"]))
+                cost+=action["cooling_mw"]*dt*variable
+            elif kind=="renewable":
+                cost+=action["generation_mw"]*dt*variable
             else:
                 # FIFO recovery of previously deferred energy; each item retains
                 # its original deadline across solves, not a fresh delay window.
@@ -171,7 +194,8 @@ def replay(scenario: dict, lookahead_intervals: int=24, time_limit_s: float=60) 
     result["peak_uncovered_mw"]=max(gap,default=0)
     result["terminal_recovery_shortfall_mwh"]={rid:max(0,goal-state[rid]["soc"]) for rid,goal in targets.items()}
     result["terminal_backlog_mwh"]={rid:sum(a for _,a in st["queue"]) for rid,st in state.items() if "queue" in st}
+    result["terminal_thermal_shortfall_c"]={rid:max(0,state[rid]["temperature_c"]-goal) for rid,goal in thermal_targets.items()}
     result["feasible"]=(result["status"]=="solved" and result["peak_uncovered_mw"]<=TOL and
-        all(v<=TOL for v in result["terminal_recovery_shortfall_mwh"].values()) and all(v<=TOL for v in result["terminal_backlog_mwh"].values()))
+        all(v<=TOL for v in result["terminal_recovery_shortfall_mwh"].values()) and all(v<=TOL for v in result["terminal_backlog_mwh"].values()) and all(v<=TOL for v in result["terminal_thermal_shortfall_c"].values()))
     result["evidence"]["result_sha256"]=_digest(result)
     return result
