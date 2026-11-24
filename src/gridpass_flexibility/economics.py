@@ -24,7 +24,7 @@ def _id(v):
         raise ValueError("IDs must be nonempty strings up to 100 characters")
     return v
 
-def _cashflows(annual, a, years, discount, capex_factor, extra_delay, monthly_costs=None, commissioning_cost=None):
+def _cashflows(annual, a, years, discount, capex_factor, extra_delay, monthly_costs=None, commissioning_cost=None, year_costs=None):
     capex=_number(a["capex_eur"],"initial capital expenditure",0,1e12)*capex_factor
     delay=_number(a["delay_months"],"connection delay",0,1200)+extra_delay
     seasonal=a.get("seasonal_commissioning",False)
@@ -55,6 +55,8 @@ def _cashflows(annual, a, years, discount, capex_factor, extra_delay, monthly_co
             first_month=int(max(0,min(12,delay-(y-1)*12)))
             operating=(commissioning_cost if 0<first_month<12 and commissioning_cost is not None
                        else sum(monthly_costs[first_month:]))
+        if year_costs is not None and fraction>0:
+            operating=year_costs[y]
         net=fraction*(margin-fixed)-operating-replacement.get(y,0)+terminal
         flows.append({"year":y,"service_fraction":fraction,
                       "contribution_eur":fraction*margin,"fixed_opex_eur":fraction*fixed,
@@ -151,8 +153,41 @@ def _repeat_boundary(scenario, schedule):
             "method": "declared_state_match", "fuel_assumption": "replenished_each_year"}
 
 
-def _annual(a, modifiers, deadline, start_month=0):
+def _carry_state(scenario, schedule):
+    """Carry physical boundary state; keep the original terminal targets."""
+    state={}
+    dt=scenario["interval_hours"]
+    for spec in scenario.get("resources",[]):
+        name=spec["id"]
+        trace=schedule["resources"][name]
+        if spec["kind"]=="battery":
+            state[name]={"initial_mwh":trace["soc_mwh"][-1],
+                         "terminal_mwh":spec.get("terminal_mwh",spec.get("initial_mwh",spec["energy_mwh"]))}
+        elif spec["kind"]=="thermal_cooling":
+            state[name]={"initial_temp_c":trace["temperature_c"][-1],
+                         "terminal_max_temp_c":spec.get("terminal_max_temp_c",spec["initial_temp_c"])}
+        elif spec["kind"]=="generator":
+            state[name]={"initial_mw":trace["generation_mw"][-1]}
+            if "online" in trace:
+                on=trace["online"][-1]>.5
+                samples=0
+                for v in reversed(trace["online"]):
+                    if (v>.5)!=on:break
+                    samples+=1
+                age=samples*dt
+                if samples==len(trace["online"]) and on==spec.get("initial_on",spec.get("initial_mw",0)>0):
+                    age+=spec.get("initial_state_hours",8760)
+                state[name].update(initial_on=on,initial_state_hours=min(age,8760))
+        elif "backlog_mwh" in trace and abs(trace["backlog_mwh"][-1])>1e-5:
+            raise ValueError("Cannot carry unresolved workload backlog across operating years")
+    return state
+
+
+def _annual(a, modifiers, deadline, start_month=0, initial_state=None):
     scenario=deepcopy(a["scenario"])
+    if initial_state is not None:
+        for spec in scenario.get("resources",[]):
+            spec.update(initial_state.get(spec["id"],{}))
     n=len(scenario["baseline_mw"]);dt=_number(scenario["interval_hours"],"interval hours",1/3600,24)
     if abs(n*dt-8760)>1e-6:raise ValueError("Economics requires a complete 8760-hour operating year")
     prices=_series(scenario,"price_eur_mwh",n)
@@ -196,6 +231,8 @@ def _annual(a, modifiers, deadline, start_month=0):
         result["message"]=solved["message"]
         return result
     result["repeat_boundary"]=_repeat_boundary(scenario,solved["schedule"])
+    if a.get("interyear_reoptimization",False):
+        result["next_initial_state"]=_carry_state(scenario,solved["schedule"])
     grid=solved["schedule"]["grid_import_mw"]
     grid_cost=sum(p*g*dt for p,g in zip(energy_price,grid))
     grid_emissions=sum(ef*g*dt for ef,g in zip(grid_ef,grid))/1000
@@ -241,6 +278,39 @@ def _annual(a, modifiers, deadline, start_month=0):
         result["monthly_operating_cost_eur"]=month_costs
     return result
 
+def _continuous_years(a, case, deadline, years, discount, annual):
+    """Sequential annual redispatch, not joint multi-year optimization."""
+    row={"id":a["id"],"annual":annual,"eligible":False,"operating_years":[]}
+    finance=_cashflows(0,a,years,discount,case["capex_multiplier"],case["extra_delay_months"])
+    delay=finance["delay_months"]
+    if delay%12 and not a.get("seasonal_commissioning",False):
+        raise ValueError("Inter-year reoptimization requires seasonal commissioning for fractional service years")
+    if annual["dispatch_status"]!="solved":
+        row["continuous_complete"]=False
+        return row
+    state=None
+    costs={}
+    feasible=True
+    for flow in finance["cashflows"]:
+        if flow["service_fraction"]<=0:continue
+        y=flow["year"]
+        month=int(max(0,delay-(y-1)*12))
+        result=annual if state is None and not month else _annual(a,case,deadline,start_month=month,initial_state=state)
+        row["operating_years"].append({"project_year":y,"first_service_month":month+1,
+                                       "carried_initial_state":state,**result})
+        if result["dispatch_status"]!="solved":
+            row["continuous_complete"]=False
+            return row
+        state=result["next_initial_state"]
+        costs[y]=result["annual_operating_cost_eur"]
+        feasible=feasible and result["feasible"]
+    row["finance"]=_cashflows(0,a,years,discount,case["capex_multiplier"],case["extra_delay_months"],year_costs=costs)
+    row["continuous_complete"]=True
+    row["boundary_validation"]={"pass":True,"method":"sequential_redispatch","fuel_assumption":"replenished_each_year"}
+    row["eligible"]=bool(costs) and feasible
+    return row
+
+
 def compare_lifecycle(payload):
     """Compute NPV and feasible ranking for base and explicit sensitivities."""
     _fields(payload,["years","real_discount_rate","alternatives"],["sensitivities","reference_id","time_limit_s"],"economics")
@@ -252,7 +322,9 @@ def compare_lifecycle(payload):
     if not isinstance(alternatives,list) or not 1<=len(alternatives)<=MAX_ALTERNATIVES:raise ValueError("1–8 alternatives required")
     for a in alternatives:
         _fields(a,["id","scenario","capex_eur","delay_months","annual_contribution_eur","annual_fixed_opex_eur","tariff"],
-                ["fuel","replacements","residual_value_eur","seasonal_commissioning"],"alternative")
+                ["fuel","replacements","residual_value_eur","seasonal_commissioning","interyear_reoptimization"],"alternative")
+        if type(a.get("interyear_reoptimization",False)) is not bool:
+            raise ValueError("interyear_reoptimization must be boolean")
     ids=[_id(a["id"]) for a in alternatives]
     if len(set(ids))!=len(ids):raise ValueError("Duplicate alternative ID")
     reference=payload.get("reference_id",ids[0])
@@ -271,6 +343,9 @@ def compare_lifecycle(payload):
         rows=[]
         for a in alternatives:
             annual=_annual(a,case,deadline)
+            if a.get("interyear_reoptimization",False):
+                rows.append(_continuous_years(a,case,deadline,years,discount,annual))
+                continue
             row={"id":a["id"],"annual":annual,"eligible":False}
             if annual["dispatch_status"]=="solved":
                 finance=_cashflows(annual["annual_operating_cost_eur"],a,years,discount,case["capex_multiplier"],case["extra_delay_months"],annual.get("monthly_operating_cost_eur"))
@@ -308,7 +383,7 @@ def compare_lifecycle(payload):
             row["incremental_npv_eur"]=(row["finance"]["npv_eur"]-reference_row["finance"]["npv_eur"]
                                          if row["eligible"] and reference_row["eligible"] else None)
         ranked=sorted((r for r in rows if r["eligible"]),key=lambda r:(-r["finance"]["npv_eur"],r["id"]))
-        complete=all(r["annual"]["dispatch_status"]=="solved" and r.get("commissioning",{}).get("dispatch_status","solved")=="solved"
+        complete=all(r["continuous_complete"] if "continuous_complete" in r else r["annual"]["dispatch_status"]=="solved" and r.get("commissioning",{}).get("dispatch_status","solved")=="solved"
                      and (not r["annual"]["feasible"] or not r.get("commissioning",{}).get("feasible",True)
                           or r.get("boundary_validation",{}).get("pass",True)) for r in rows)
         results.append({"id":case["id"],"assumptions":case,"alternatives":rows,
@@ -322,6 +397,8 @@ def compare_lifecycle(payload):
     if any(a.get("seasonal_commissioning",False) for a in alternatives):
         result["limitations"]=result["limitations"].replace("fractional service years prorate all annual costs and contribution, including peak tariff.", "nonseasonal alternatives prorate all annual costs and contribution, including peak tariff.")
         result["limitations"]+=" Seasonal alternatives assume January project start and independently redispatch the first partial year from the declared scenario initial conditions and zero workload backlog, without pre-service notice or energy. Full years repeat the annual schedule; pre-service commissioning energy and actual plant state are not validated. Generator fuel budget is the declared available amount per solve. Contribution and fixed costs remain prorated."
-    result["limitations"]+=" Repeated-year and commissioning-to-full-year recommendations require conservative declared-state matching (absolute tolerance 1e-5) for storage, thermal state, generator output/commitment/dwell and workload backlog. A mismatch is not proof no continuous schedule exists; no inter-year reoptimization is attempted. Fuel replenishment is assumed at year boundaries."
+    result["limitations"]+=" By default, repeated-year and commissioning-to-full-year recommendations require conservative declared-state matching (absolute tolerance 1e-5) for storage, thermal state, generator output/commitment/dwell and workload backlog. A mismatch is not proof no continuous schedule exists; no inter-year reoptimization is attempted. Fuel replenishment is assumed at year boundaries."
+    if any(a.get("interyear_reoptimization",False) for a in alternatives):
+        result["limitations"]+=" Opt-in interyear_reoptimization instead solves each active year sequentially from the preceding terminal physical state, with fixed original terminal targets and zero terminal workload backlog. Annual is a declared-state reference; operating_years contains actual service-year results and costs. Fractional service requires seasonal commissioning. Fuel is replenished each year; no joint multi-year foresight or global optimum is claimed."
     result["evidence"]["result_sha256"]=_digest(result)
     return result

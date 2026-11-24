@@ -723,6 +723,9 @@
                     "minItems": 0,
                     "maxItems": 100
                   },
+                  "interyear_reoptimization": {
+                    "type": "boolean"
+                  },
                   "seasonal_commissioning": {
                     "type": "boolean"
                   }

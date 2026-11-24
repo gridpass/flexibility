@@ -19,3 +19,22 @@ Limitations: no inferred revenue or connection timing, no financing/tax model, i
 ## Repeated-year boundary check
 
 When the same annual trace is used in more than one service year, or a seasonal commissioning trace is followed by a full year, check the relevant terminal state against the next trace’s declared initial state. The result exposes `repeat_boundary` per trace and `boundary_validation` per alternative. Battery energy, zone temperature, generator output and online state, and workload backlog must match within an absolute tolerance of 1e-5 in their respective units. Generator remaining minimum on/off dwell cannot exceed the declared initial obligation (rounded to intervals). Fuel is assumed replenished each year. A mismatch makes the alternative ineligible and blocks a complete comparison if it is otherwise feasible. This is a conservative certificate for repeating the existing traces, not proof that no continuous multi-year schedule is feasible; no state reset, reoptimization, or implicit recharge is authorized. Nonseasonal fractional years remain a prorated annual proxy. Site commissioning state and fuel replenishment must be independently confirmed.
+
+## Sequential operating-year redispatch
+
+Set `interyear_reoptimization: true` per alternative to solve each active
+service year using the same HiGHS dispatch engine, starting from the preceding
+actual terminal battery SOC, zone temperature, generator output and commitment
+age. Original terminal targets remain fixed; workload recovery must finish
+within each year. Fuel is replenished at each year boundary. Fractional service
+requires the existing seasonal commissioning option and its calendar tariff.
+The initial full-year solve is retained as a declared-state reference and
+validates the full input before any calendar slicing; if it cannot solve the
+comparison is incomplete. The `operating_years` array contains the actual
+service-year dispatch summaries and carried states; cashflow uses each actual
+year's independently reconciled operating cost. Any cap violation excludes the
+alternative; any unsolved year blocks a complete comparison. The shared time
+budget and hosted complexity guard cover all solves. This is sequential
+perfect-foresight yearly redispatch, not a joint multi-year global optimum:
+the preceding year is not revisited to prepare for a later restriction.
+The legacy conservative state-match mode remains the default.
