@@ -18,4 +18,5 @@ jobs:
       - run: gridpass-flexibility --dispatch examples/discrete-dispatch.json
       - run: gridpass-flexibility --size examples/capacity-sizing.json
       - run: gridpass-flexibility --stress examples/annual-stress.json
+      - run: gridpass-flexibility --causal examples/causal-replay.json
       - run: python -m gridpass_flexibility.guard_demo examples/guard-site.json > guard-trace.json

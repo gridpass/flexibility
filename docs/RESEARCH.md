@@ -63,3 +63,7 @@ Continuous battery MW/MWh and generator MW sizing now shares a single design acr
 ## Implementation checkpoint (2026-11-24, v0.3.1)
 
 Independent profile schema v1 is packaged and validated. Annual, duration, notice, recovery and optional resolution requirements must be covered in one full-year case. Result hashes bind the normalized profile and scenario suite. Full-year 15-minute synthetic conformance and negative tests pass. Public comparison sources were checked on 2026-11-24: EPRI deliverables (2026-10-12 paper) and NVIDIA DSX Flex Architecture (adaptation of v1.0 accessed 2026-11-13). These are conceptual references, not normative GridPass dependencies or evidence of official EPRI conformance. See [independent profile specification](PROFILE_SPEC.md).
+
+## Implementation checkpoint (2026-11-24, v0.3.3)
+
+A sampled causal policy now re-plans against observed conditions and announced events; unobserved future demand, availability, price and ordinary cap are persistence forecasts. The same LP/MILP physical model carries battery SOC, generator fuel and dwell time, and deferred workload deadlines. Tests distinguish perfect-foresight feasibility from surprise-event performance and reproduce forced-trip/restart constraints. The causal operation is available locally via CLI and the single MCP tool, with bounded solver time and explicit partial failure. See [CAUSAL.md](CAUSAL.md). This is modeled evidence, not equipment or grid acceptance.

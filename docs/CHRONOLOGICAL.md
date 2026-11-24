@@ -49,4 +49,4 @@ Example profiles are independent, editable finite test envelopes, not official E
 
 ## Next engineering steps
 
-Explicit trips and restart recovery, calibrated workload and thermal models, causal stochastic/robust schedules, additional stress event sequences, measured field replay, report export, and the GridPass public MCP/website integration. Keep the zero-dependency screening calculator for quick cases; advanced numerical work runs with an established solver.
+Explicit trips and restart recovery, calibrated workload and thermal models, sampled causal replay is available separately (see [CAUSAL.md](CAUSAL.md)); remaining stochastic/robust policies and additional stress event sequences, measured field replay, report export, and the GridPass public MCP/website integration. Keep the zero-dependency screening calculator for quick cases; advanced numerical work runs with an established solver.
