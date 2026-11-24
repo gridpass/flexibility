@@ -99,3 +99,7 @@ Compare full-year connection alternatives using the same dispatch model, real-EU
 ## Measured validation
 
 See the [reproducible AAU measured trace benchmark](docs/MEASURED.md), including held-out prediction errors, dispatch balance checks and explicit limits on physical calibration.
+
+## Bounded HTTP service
+
+Use the optional Linux `host` extra for an authenticated, process-bounded upstream exposing the same evaluation operations. See [HTTP service setup and limits](docs/HTTP.md). Public deployment is not implied.

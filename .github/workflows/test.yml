@@ -11,7 +11,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - run: pip install ".[agent,guard]"
+      - run: pip install ".[agent,guard,host]"
       - run: python -m unittest discover -s tests -v
       - run: gridpass-flexibility examples/data-centre.json
       - run: gridpass-flexibility --dispatch examples/chronological.json
