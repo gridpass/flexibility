@@ -39,6 +39,11 @@ class AgentTests(unittest.IsolatedAsyncioTestCase):
                     invalid=await client.call_tool("evaluate_flexibility",{"operation":"unknown","payload":{}})
                     self.assertTrue(invalid.isError)
 
+    def test_discrete_budget(self):
+        from gridpass_flexibility.mcp_server import _check_budget
+        with self.assertRaisesRegex(ValueError,"binary variables"):
+            _check_budget("dispatch",{"baseline_mw":[1]*5000,"resources":[{"kind":"generator","discrete":True}]})
+
     def test_budget_rejection(self):
         from gridpass_flexibility.mcp_server import _check_budget
         with self.assertRaises(ValueError):

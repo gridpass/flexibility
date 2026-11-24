@@ -1,0 +1,14 @@
+{
+  "interval_hours": 1,
+  "baseline_mw": [10,10,10,10,10,10],
+  "normal_import_cap_mw": 12,
+  "price_eur_mwh": 100,
+  "events": [{"start":1,"end":3,"notice_minutes":60,"cap_mw":6}],
+  "resources": [
+    {"id":"generator","kind":"generator","power_mw":3,"discrete":true,"minimum_output_mw":2,
+     "minimum_up_hours":2,"minimum_down_hours":1,"startup_cost_eur":100,
+     "online_cost_eur_per_hour":20,"variable_cost_eur_mwh":180,"response_minutes":30},
+    {"id":"battery","kind":"battery","power_mw":2,"energy_mwh":5,"discrete":true,
+     "charge_efficiency":0.95,"discharge_efficiency":0.95,"reserve_mwh":1}
+  ]
+}

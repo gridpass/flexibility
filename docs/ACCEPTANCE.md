@@ -21,15 +21,23 @@ Goal: an independently usable open-source large-load flexibility assessment work
 - EPRI's public October 12, 2026 description and NVIDIA's November 13, 2026 adaptation motivate the dimensions; no official class label or certification is asserted.
 - v0.3.0 merge #6 retained the separate Guard reference demo and passed CI on Python 3.10 and 3.12. The public simplified calculator from private PR #79 was verified live on 2026-11-24.
 
+## Verified in v0.3.2 (discrete equipment dispatch)
+
+- Optional battery binary mode excludes simultaneous charge/discharge, including a regression case where the continuous relaxation can dissipate surplus generation artificially.
+- Generator commitment enforces binary start/stop/online state, minimum output, interval-rounded minimum on/off time, initial dwell obligation, ramp, response and fuel limits. Startup and online costs are included in the reported cost.
+- Independent exhaustive enumeration cross-checks the cost optimum for a five-interval commitment case. Half-hour notice/ramp and incompatible-outage regression tests pass.
+- Continuous sizing rejects discrete assets/options; candidate design comparison retains the exact constraints. The local MCP rejects excessive binary-variable counts.
+- 61 tests passed locally, including installed-package MCP roundtrip. Causal control, forced-trip/restart behavior, terminal dwell carryover and field validation remain open.
+
 ## Remaining release gates
 
 | Gate | Acceptance evidence |
 |---|---|
 | Profile interoperability | Independent schema and conformance tests now implemented; obtain authoritative EPRI class semantics and operator-specific rules before any formal mapping |
-| Operational feasibility | Causal/receding-horizon schedule with unknown future events, failure/recovery tests, fine time-step response checks, storage mode and generator start/run constraints |
+| Operational feasibility | Causal/receding-horizon schedule with unknown future events, forced-trip/restart tests, finer response checks and terminal state carryover; discrete storage and generator commitment now implemented |
 | Resource models | Calibrated workload and thermal constraints, renewables, protected loads, real measured traces with clear reuse permissions |
 | Economics | Consistent horizon, capital and fixed costs, fuel, maintenance, tariffs, emissions, connection-delay value and sensitivity; independently check numerical examples |
-| Validation | Closed-form and synthetic full-year 15-minute cases implemented; remaining solver cross-checks, real trace replay, failure injection, numerical tolerance and repeatable benchmark artifacts |
+| Validation | Closed-form and synthetic full-year 15-minute cases implemented; a small exhaustive commitment cost cross-check is implemented; remaining real trace replay, failure injection, numerical tolerance and repeatable benchmark artifacts |
 | Hosted parity | Public website and existing MCP use this canonical engine, provide a simple entry point plus advanced operations; authenticated or resource-bounded optimization; live endpoint tests, no customer data leakage |
 | Usability | Documented examples, versioned request/response schema, clear error states, inspectable schedules, exportable results and limitations |
 

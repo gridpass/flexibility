@@ -13,7 +13,7 @@ The input contains a list of cases and a list of investable options.
 - Each case has a unique ID, a chronological scenario, an optional nonnegative operating-cost weight and optional availability overrides for new assets. All cases enforce their grid import limits. Zero weight means the case is enforced but contributes no operating cost to the objective.
 - A battery option has maximum MW and MWh, allocated EUR per MW and per MWh, charge/discharge efficiency, reserve, initial and terminal SOC fractions, and charging-to-discharge power ratio.
 - A generator option has maximum MW, allocated EUR per MW, variable EUR/MWh, response time, ramp fraction per hour and optional fuel-energy budget.
-- Candidate IDs must not duplicate existing resources. Continuous capacities are shared across cases. Each case has its own operating schedule.
+- Candidate IDs must not duplicate existing resources. Continuous capacities are shared across cases. Each case has its own operating schedule. Continuous sizing rejects discrete resources and capacity options; use explicit design comparison for mixed-integer equipment.
 - All costs must be allocated to the same analysis horizon. The model does not guess project lifetime, discount rate, annualization, tariff changes or avoided connection delays.
 
 The LP minimizes investment plus weighted operation. A feasible solution is independently replayed through the chronological evaluator. The result includes capacities, modeled cost, per-case feasibility, evidence hashes and solver version. This is finite-scenario planning with perfect foresight, not a causal robust dispatch policy. A solver timeout or replay failure is not a valid design.
@@ -37,5 +37,5 @@ A passing result refers only to the modeled test cases. Response times shorter t
 ## Open gaps
 
 - Causal dispatch with uncertain event timing and outages rather than perfect foresight.
-- Equipment-specific nonlinear thermal and workload behavior, minimum run times, starts and binary inverter modes.
+- Equipment-specific nonlinear thermal and workload behavior, forced-trip and restart behavior. Discrete generator start/run and battery inverter modes are now available in fixed-capacity dispatch.
 - Site-specific financial analysis, reliability probabilities, data-driven validation and field acceptance.

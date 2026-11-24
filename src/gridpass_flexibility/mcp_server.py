@@ -13,7 +13,12 @@ def _check_budget(operation, payload):
     # These bounds are specific to the agent adapter, not to engineering CLI use.
     # A resource interval is a conservative proxy for solver work; not a runtime guarantee.
     def effort(s, extra=0):
-        return len(s["baseline_mw"]) * (2 + len(s.get("resources", [])) + extra)
+        n=len(s["baseline_mw"])
+        rs=s.get("resources",[])
+        binary_intervals=n*sum(3 if r.get("kind")=="generator" else 1 for r in rs if r.get("discrete") is True)
+        if binary_intervals>12_000:
+            raise ValueError("Agent request exceeds 12,000 binary variables per dispatch; use the engineering CLI.")
+        return n*(2+len(rs)+extra)+10*binary_intervals
     if operation == "screen":
         return
     if operation == "dispatch":
@@ -21,7 +26,7 @@ def _check_budget(operation, payload):
     elif operation == "compare_designs":
         designs=payload["designs"]
         if len(designs)>32:raise ValueError("At most 32 candidate designs per agent request")
-        work=effort(payload["scenario"])+sum(effort(payload["scenario"],len(d["resources"])) for d in designs)
+        work=effort(payload["scenario"])+sum(effort({**payload["scenario"],"resources":payload["scenario"].get("resources",[])+d["resources"]}) for d in designs)
     elif operation == "profile":
         scenarios=payload["scenarios"]
         if len(scenarios)>32:raise ValueError("At most 32 profile cases per agent request")
