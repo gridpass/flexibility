@@ -8,6 +8,7 @@ def main():
     p = argparse.ArgumentParser(description="Independent site flexibility assessment")
     p.add_argument("scenario", nargs="?", type=Path)
     p.add_argument("--schema", action="store_true")
+    p.add_argument("--profile-schema", action="store_true", help="Print independent commitment profile JSON Schema")
     mode=p.add_mutually_exclusive_group()
     mode.add_argument("--dispatch", action="store_const", const="dispatch", dest="operation", help="Chronological optimization")
     mode.add_argument("--compare-designs", action="store_const", const="compare_designs", dest="operation", help="Compare explicit equipment designs")
@@ -16,6 +17,10 @@ def main():
     mode.add_argument("--stress", action="store_const", const="stress", dest="operation", help="Generate annual commitment stress cases")
     p.set_defaults(operation="screen")
     args = p.parse_args()
+    if args.profile_schema:
+        from .profiles import profile_schema
+        print(json.dumps(profile_schema(), indent=2))
+        return 0
     if args.schema:
         print(json.dumps(SCHEMA, indent=2))
         return 0
@@ -27,7 +32,7 @@ def main():
     except (OSError, ValueError, KeyError, TypeError, ImportError) as exc:
         p.error(str(exc))
     print(json.dumps(result, indent=2, allow_nan=False))
-    return 0 if result.get("valid",result.get("status") not in ("solver_failed","replay_failed","infeasible")) else 2
+    return 0 if result.get("valid",result.get("status") not in ("solver_failed","replay_failed","infeasible") and result.get("result")!="evaluation_error") else 2
 
 if __name__ == "__main__":
     raise SystemExit(main())

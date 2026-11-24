@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:gridpass:flexibility:profile:v1",
+  "title": "GridPass independent commitment profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "reduction_mw", "notice_minutes", "activation_hours", "annual_event_hours"],
+  "properties": {
+    "schema_version": {"const": "gridpass-profile-v1", "default": "gridpass-profile-v1"},
+    "id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "version": {"type": "string", "minLength": 1, "maxLength": 128},
+    "reduction_mw": {"type": "number", "minimum": 0.000001, "maximum": 100000000},
+    "notice_minutes": {"type": "number", "minimum": 0, "maximum": 525600},
+    "activation_hours": {"type": "number", "minimum": 0.0001, "maximum": 8760},
+    "annual_event_hours": {"type": "number", "minimum": 0.0001, "maximum": 8760},
+    "minimum_recovery_hours": {"type": "number", "minimum": 0, "maximum": 8760},
+    "maximum_interval_minutes": {"type": "number", "minimum": 0.016666666666666666, "maximum": 1440}
+  }
+}

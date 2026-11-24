@@ -30,7 +30,7 @@ Supply a scenario and a list of candidate additions. Each candidate has a unique
 
 ## Test profiles
 
-A profile includes its ID/version, target reduction MW, notice time, required activation duration, and annual event hours. Each scenario is assessed using the same optimizer. A full-year scenario is necessary for annual usage coverage. Qualifying event caps must request at least the target reduction relative to baseline/normal import for the whole event. A positive result refers only to the supplied modeled cases; it is not a certification or a guarantee against other event sequences.
+A profile includes its ID/version, target reduction MW, notice time, required activation duration, and annual event hours. Each scenario is assessed using the same optimizer. A single full-year scenario must jointly cover notice, duration, annual use, and any declared recovery and resolution limits. See [the v1 profile specification](PROFILE_SPEC.md). Qualifying event caps must request at least the target reduction relative to baseline/normal import for the whole event. A positive result refers only to the supplied modeled cases; it is not a certification or a guarantee against other event sequences.
 
 Example profiles are independent, editable finite test envelopes, not official EPRI classification rules. The public EPRI materials describe the dimensions; NVIDIA's published November 13, 2026 adaptation of Flex MOSAIC v1.0 is a useful comparison reference (https://docs.nvidia.com/dsx/flex/architecture). Confirm EPRI's authoritative version and test methodology before claiming formal class mapping.
 

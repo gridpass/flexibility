@@ -29,6 +29,7 @@ The optional optimization engine uses SciPy/HiGHS to create chronological operat
 pip install ".[optimization]"
 gridpass-flexibility --dispatch examples/chronological.json
 gridpass-flexibility --compare-designs examples/design-comparison.json
+gridpass-flexibility --profile-schema
 gridpass-flexibility --profile examples/profile-check.json
 gridpass-flexibility --size examples/capacity-sizing.json
 gridpass-flexibility --stress examples/annual-stress.json
@@ -42,7 +43,7 @@ Size battery power, battery energy and generation capacity across several altern
 
 Generate distributed and clustered annual restrictions from a defined commitment. Optionally test whole-horizon resource outages. A passing scenario is not proof of performance under all future event sequences; the model uses independent perfect-foresight schedules.
 
-See [capacity and commitment planning](docs/PLANNING.md) and the example JSON inputs.
+See [capacity and commitment planning](docs/PLANNING.md), the [v1 commitment profile specification](docs/PROFILE_SPEC.md) and the example JSON inputs.
 
 ## MCP for agents
 
