@@ -32,7 +32,7 @@ class AgentTests(unittest.IsolatedAsyncioTestCase):
                     await client.initialize()
                     tools=await client.list_tools()
                     self.assertEqual([t.name for t in tools.tools],["evaluate_flexibility"])
-                    for operation,payload in [("screen",BASE),("dispatch",json.loads((EXAMPLES/"chronological.json").read_text()))]:
+                    for operation,payload in [("screen",BASE),("dispatch",json.loads((EXAMPLES/"chronological.json").read_text())),("causal",json.loads((EXAMPLES/"causal-replay.json").read_text()))]:
                         result=await client.call_tool("evaluate_flexibility",{"operation":operation,"payload":payload})
                         self.assertFalse(result.isError)
                         self.assertEqual(result.structuredContent,evaluate_request(operation,payload))
@@ -43,6 +43,13 @@ class AgentTests(unittest.IsolatedAsyncioTestCase):
         from gridpass_flexibility.mcp_server import _check_budget
         with self.assertRaisesRegex(ValueError,"binary variables"):
             _check_budget("dispatch",{"baseline_mw":[1]*5000,"resources":[{"kind":"generator","discrete":True}]})
+
+    def test_causal_budget_rejection(self):
+        from gridpass_flexibility.mcp_server import _check_budget
+        with self.assertRaisesRegex(ValueError,"96 steps"):
+            _check_budget("causal",{"scenario":{"baseline_mw":[1]*97}})
+        with self.assertRaisesRegex(ValueError,"60 seconds"):
+            _check_budget("causal",{"scenario":{"baseline_mw":[1]},"time_limit_s":61})
 
     def test_budget_rejection(self):
         from gridpass_flexibility.mcp_server import _check_budget

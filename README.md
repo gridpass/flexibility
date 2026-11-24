@@ -34,6 +34,7 @@ gridpass-flexibility --profile-schema
 gridpass-flexibility --profile examples/profile-check.json
 gridpass-flexibility --size examples/capacity-sizing.json
 gridpass-flexibility --stress examples/annual-stress.json
+gridpass-flexibility --causal examples/causal-replay.json
 ```
 
 Read the [chronological evaluation specification](docs/CHRONOLOGICAL.md) for assumptions, schema, economics, and evidence boundaries. The example profile check is intentionally incomplete because it does not cover a full year. The implementation does not claim EPRI certification or equivalence to its tool.
@@ -46,6 +47,10 @@ Generate distributed and clustered annual restrictions from a defined commitment
 
 See [capacity and commitment planning](docs/PLANNING.md), the [v1 commitment profile specification](docs/PROFILE_SPEC.md) and the example JSON inputs.
 
+## Causal replay
+
+Run a sampled receding-horizon policy using only observed resource states and announced events. Future unobserved signals use persistence forecasts. Battery SOC, generator fuel and dwell time, and workload recovery deadlines carry across solves. The replay reports forced trips, unmet caps, costs, recovery shortfalls and partial failures separately from perfect-foresight feasibility. See [causal replay](docs/CAUSAL.md).
+
 ## MCP for agents
 
 ```sh
@@ -53,7 +58,7 @@ pip install ".[agent]"
 gridpass-flexibility-mcp
 ```
 
-The default transport is stdio. The read-only `evaluate_flexibility` tool accepts an operation (`screen`, `dispatch`, `compare_designs`, `profile`, `size`, or `stress`) and the corresponding example JSON payload. For a local HTTP client, run `gridpass-flexibility-mcp --transport streamable-http` and connect to `http://127.0.0.1:8765/mcp`. See [agent integration](docs/MCP.md).
+The default transport is stdio. The read-only `evaluate_flexibility` tool accepts an operation (`screen`, `dispatch`, `compare_designs`, `profile`, `size`, `stress`, or `causal`) and the corresponding example JSON payload. For a local HTTP client, run `gridpass-flexibility-mcp --transport streamable-http` and connect to `http://127.0.0.1:8765/mcp`. See [agent integration](docs/MCP.md).
 
 ## Screening model scope
 

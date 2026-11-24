@@ -1,0 +1,16 @@
+{
+  "lookahead_intervals": 5,
+  "scenario": {
+    "interval_hours": 1,
+    "baseline_mw": [10,10,10,10,10,10,10,10],
+    "normal_import_cap_mw": 10,
+    "price_eur_mwh": 100,
+    "events": [{"start":1,"end":6,"notice_minutes":0,"cap_mw":8}],
+    "resources": [
+      {"id":"generator","kind":"generator","discrete":true,"power_mw":2,
+       "minimum_output_mw":2,"minimum_up_hours":3,"minimum_down_hours":2,
+       "availability":[1,1,0,1,1,1,1,1],"variable_cost_eur_mwh":200,
+       "startup_cost_eur":10}
+    ]
+  }
+}

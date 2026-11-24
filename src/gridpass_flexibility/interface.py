@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from .screening import assess
 
-OPERATIONS = ("screen", "dispatch", "compare_designs", "profile", "size", "stress")
+OPERATIONS = ("screen", "dispatch", "compare_designs", "profile", "size", "stress", "causal")
 
 def evaluate_request(operation: str, payload: dict) -> dict:
     """Execute one operation on a JSON-compatible payload."""
@@ -31,4 +31,7 @@ def evaluate_request(operation: str, payload: dict) -> dict:
     if operation == "stress":
         from .stress import test_commitment
         return test_commitment(payload["site"], payload["profile"], payload.get("outage_ids", []))
+    if operation == "causal":
+        from .causal import replay
+        return replay(payload["scenario"], payload.get("lookahead_intervals",24), payload.get("time_limit_s",60))
     raise ValueError(f"Unsupported evaluation operation: {operation}")

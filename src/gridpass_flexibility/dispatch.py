@@ -31,7 +31,7 @@ def _index(x, name, n):
     if type(x) is not int or not 0<=x<=n: raise ValueError(f"Invalid {name}")
     return x
 
-def _build_model(scenario: dict, expansion=None, hard_caps=False):
+def _build_model(scenario: dict, expansion=None, hard_caps=False, *, causal_state=None):
     """Build the same sparse physical model for dispatch and capacity planning.
 
     Expansion resource IDs refer to resources with upper bounds given by their
@@ -62,6 +62,8 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False):
 
     bounds=[]; operating=[]; sizing={}; integer=[]
     expansion=expansion or {}
+    recovery_columns=[]
+    causal_state=causal_state or {}
     eq_r=[];eq_c=[];eq_v=[];eq_b=[]
     ub_r=[];ub_c=[];ub_v=[];ub_b=[]
     def variable(lo,hi,cost=0,binary=False):
@@ -102,6 +104,11 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False):
             power_col=variable(0,p)
             sizing[(name,"power_mw")]=power_col
         if kind=="generator":
+            if causal_state:
+                # An already running generator can retain its observed output
+                # during notification delay; it cannot increase it until ready.
+                floor=_number(spec.get("initial_mw",0),name+" initial output",0,p)
+                available=[max(available[t],min(floor,p*availability[t])) for t in range(n)]
             # Generation can be scheduled outside events for pre-ramp/recovery.
             gen=series(0,available,cost*dt)
             ramp=_number(spec.get("ramp_mw_per_hour",p/dt),name+" ramp")*dt
@@ -186,6 +193,13 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False):
             if option is not None:
                 constraint([(soc[-1],-1),(energy_col,option["terminal_fraction"])],0)
             else:constraint([(soc[-1],-1)],-final)
+            if name in causal_state.get("recharge_targets",{}):
+                target=_number(causal_state["recharge_targets"][name],name+" recharge target",reserve,energy)
+                for t in range(n):
+                    if event_at[t] is None:
+                        deficit=variable(0,target)
+                        constraint([(soc[t],-1),(deficit,-1)],-target)
+                        recovery_columns.append(deficit)
             trace={"charge_mw":charge,"discharge_mw":discharge,"soc_mwh":soc}
             if discrete:
                 mode=[variable(0,1,0,True) for _ in range(n)]
@@ -200,8 +214,9 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False):
             backlog_cap=_number(spec["shift_budget_mwh"],name+" shift budget")
             recover=_number(spec.get("recovery_power_mw",p),name+" recovery power")
             max_delay=_number(spec["max_delay_hours"],name+" delay",dt,8760)
-            if max_delay/dt > n+EPS: delay=n
-            else:delay=max(1,math.floor(max_delay/dt+EPS))
+            delay=max(1,math.floor(max_delay/dt+EPS))
+            initial_queue=causal_state.get("backlogs",{}).get(name,[])
+            initial_backlog=sum(amount for _,amount in initial_queue)
             shed=series(0,[min(available[t],demand[t]) if event_at[t] else 0 for t in range(n)],cost*dt)
             restore=series(0,[recover*availability[t] if event_at[t] is None else 0 for t in range(n)],[EPS*dt]*n)
             backlog=[variable(0,backlog_cap) for _ in range(n)]
@@ -211,12 +226,14 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False):
             for t in range(n):
                 terms=[(backlog[t],1),(shed[t],-dt),(restore[t],dt)]
                 if t:terms.append((backlog[t-1],-1))
-                constraint(terms,0,True)
+                constraint(terms,0 if t else initial_backlog,True)
                 for cumulative,flow in ((deferred,shed),(recovered,restore)):
                     terms=[(cumulative[t],1),(flow[t],-dt)]
                     if t:terms.append((cumulative[t-1],-1))
                     constraint(terms,0,True)
-                if t>=delay:constraint([(deferred[t-delay],1),(recovered[t],-1)],0)
+                due=sum(amount for deadline,amount in initial_queue if deadline<=t)
+                if t>=delay or due:
+                    constraint(([(deferred[t-delay],1)] if t>=delay else [])+[(recovered[t],-1)],-due)
                 balance[t]+=[(shed[t],1),(restore[t],-1)]
             constraint([(backlog[-1],1)],0,True)
             resources.append((name,kind,{"shift_mw":shed,"recovery_mw":restore,"backlog_mwh":backlog}))
@@ -230,37 +247,59 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False):
     return {"bounds":bounds,"operating":np.asarray(operating),"A_ub":matrix(ub_r,ub_c,ub_v,ub_b),
             "b_ub":np.asarray(ub_b),"A_eq":matrix(eq_r,eq_c,eq_v,eq_b),"b_eq":np.asarray(eq_b),
             "grid":grid,"gap":gap,"caps":caps,"dt":dt,"n":n,"demand":demand,"prices":prices,
-            "events":events,"resources":resources,"sizing":sizing,"integrality":np.asarray(integer)}
+            "events":events,"resources":resources,"sizing":sizing,"integrality":np.asarray(integer),"recovery_columns":recovery_columns}
 
-def evaluate(scenario: dict) -> dict:
+def evaluate(scenario: dict, *, _causal_state=None, _deadline=None) -> dict:
     """Minimize import-cap violations, then operating cost at that minimum."""
     import numpy as np
     import scipy
-    from scipy.optimize import linprog, milp, Bounds, LinearConstraint
+    from time import monotonic
+    from scipy.optimize import linprog, milp, Bounds, LinearConstraint, OptimizeResult
     from scipy.sparse import coo_matrix, vstack
-    m=_build_model(scenario)
+    m=_build_model(scenario,causal_state=_causal_state)
     bounds,operating,grid,gap,caps,dt,n,demand,prices,events,resources=(
         m[k] for k in ("bounds","operating","grid","gap","caps","dt","n","demand","prices","events","resources"))
-    def solve(objective, violation_limit=None):
+    extra=[]
+    def solve(objective):
+        remaining=60 if _deadline is None else min(60,_deadline-monotonic())
+        if remaining<=0:
+            return OptimizeResult(success=False,status=1,message="Causal replay time budget exhausted")
         A_ub,b_ub=m["A_ub"],m["b_ub"]
-        if violation_limit is not None:
-            row=coo_matrix(([dt]*n,([0]*n,gap)),shape=(1,len(bounds))).tocsc()
-            A_ub=vstack([A_ub,row],format="csc")
-            b_ub=np.append(b_ub,violation_limit)
+        if extra:
+            A_ub=vstack([A_ub]+[row for row,_ in extra],format="csc")
+            b_ub=np.append(b_ub,[value for _,value in extra])
+
         if m["integrality"].any():
             lo,hi=zip(*bounds)
             return milp(objective,integrality=m["integrality"],
                         bounds=Bounds(lo,[np.inf if v is None else v for v in hi]),
                         constraints=[LinearConstraint(A_ub,-np.inf,b_ub),LinearConstraint(m["A_eq"],m["b_eq"],m["b_eq"])],
-                        options={"time_limit":60,"mip_rel_gap":0})
-        return linprog(objective,A_ub=A_ub,b_ub=b_ub,A_eq=m["A_eq"],b_eq=m["b_eq"],bounds=bounds,method="highs")
-    priority=np.zeros(len(bounds));priority[gap]=dt
-    first=solve(priority)
+                        options={"time_limit":remaining,"mip_rel_gap":0})
+        return linprog(objective,A_ub=A_ub,b_ub=b_ub,A_eq=m["A_eq"],b_eq=m["b_eq"],bounds=bounds,method="highs",options={"time_limit":remaining})
     evidence={"engine_version":__version__,"solver":"scipy.optimize.milp/HiGHS" if m["integrality"].any() else "scipy.optimize.linprog/HiGHS","scipy_version":scipy.__version__,
-              "scenario_sha256":_digest(scenario),"evidence_type":"modelled_perfect_foresight"}
-    if not first.success:return {"status":"solver_failed","solver_status":int(first.status),"message":first.message,"evidence":evidence}
-    second=solve(operating,max(0,float(first.fun))+EPS)
-    if not second.success:return {"status":"solver_failed","solver_status":int(second.status),"message":second.message,"evidence":evidence}
+              "scenario_sha256":_digest(scenario),"evidence_type":"modelled_perfect_foresight" if _causal_state is None else "observed_state_forecast_plan"}
+    def failed(sol):
+        return {"status":"solver_failed","solver_status":int(sol.status),"message":sol.message,"evidence":evidence}
+    def limit(indices,coefficients,objective):
+        sol=solve(objective)
+        if not sol.success:return sol
+        row=coo_matrix((coefficients,([0]*len(indices),indices)),shape=(1,len(bounds))).tocsc()
+        extra.append((row,max(0,float(sol.fun))+EPS))
+        return sol
+    if _causal_state is not None:
+        priority=np.zeros(len(bounds));priority[gap[0]]=1
+        first=limit([gap[0]],[1],priority)
+        if not first.success:return failed(first)
+    priority=np.zeros(len(bounds));priority[gap]=1
+    first=limit(gap,[1]*n,priority)
+    if not first.success:return failed(first)
+    if m["recovery_columns"]:
+        cols=m["recovery_columns"]
+        recovery=np.zeros(len(bounds));recovery[cols]=1
+        recovered=limit(cols,[1]*len(cols),recovery)
+        if not recovered.success:return failed(recovered)
+    second=solve(operating)
+    if not second.success:return failed(second)
     x=second.x
     def vals(indices):return [float(max(0,x[i])) for i in indices]
     g=vals(grid)

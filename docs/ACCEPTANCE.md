@@ -29,15 +29,23 @@ Goal: an independently usable open-source large-load flexibility assessment work
 - Continuous sizing rejects discrete assets/options; candidate design comparison retains the exact constraints. The local MCP rejects excessive binary-variable counts.
 - 61 tests passed locally, including installed-package MCP roundtrip. Causal control, forced-trip/restart behavior, terminal dwell carryover and field validation remain open.
 
+## Verified in v0.3.3 (causal sampled replay)
+
+- One generic CLI/MCP `causal` operation uses observed demand, price, cap, availability and announced events, with persistence forecasts for unobserved future signals. It executes only the first action of each HiGHS plan.
+- Prefix invariance tests change future demand, prices, caps, outages and unannounced events without changing preceding observations or actions. An initially empty 2 MW/4 MWh battery meets a notified restriction but misses the same surprise restriction by 4 MWh despite a feasible perfect-foresight schedule.
+- Generator forced-trip, minimum downtime/restart, minimum-up carryover, remaining fuel, battery SOC and exact inverter mode are tested. Deferred workload energy carries its original FIFO deadlines; a failed recovery forecast returns a non-passing partial result rather than resetting backlog.
+- Explicit terminal recovery checks, sampled-notice regression, bounded replay horizon and shared solver time budget, timeout error, and local MCP causal roundtrip are tested. All 75 tests passed locally.
+- See [causal replay specification](CAUSAL.md). Calibrated thermal/workload models, fallback control after infeasible forecasts, sub-sample plant response, measured validation and hosted integration remain open.
+
 ## Remaining release gates
 
 | Gate | Acceptance evidence |
 |---|---|
 | Profile interoperability | Independent schema and conformance tests now implemented; obtain authoritative EPRI class semantics and operator-specific rules before any formal mapping |
-| Operational feasibility | Causal/receding-horizon schedule with unknown future events, forced-trip/restart tests, finer response checks and terminal state carryover; discrete storage and generator commitment now implemented |
+| Operational feasibility | Sampled causal replay, discrete dispatch, forced-trip/restart and state carryover implemented; remaining fallback control, calibrated plant response, finer response checks and independent field validation |
 | Resource models | Calibrated workload and thermal constraints, renewables, protected loads, real measured traces with clear reuse permissions |
 | Economics | Consistent horizon, capital and fixed costs, fuel, maintenance, tariffs, emissions, connection-delay value and sensitivity; independently check numerical examples |
-| Validation | Closed-form and synthetic full-year 15-minute cases implemented; a small exhaustive commitment cost cross-check is implemented; remaining real trace replay, failure injection, numerical tolerance and repeatable benchmark artifacts |
+| Validation | Closed-form and synthetic full-year 15-minute cases implemented; a small exhaustive commitment cost cross-check is implemented; sampled failure injection and prefix invariance now tested; remaining real trace replay, finer numerical tolerance and repeatable benchmark artifacts |
 | Hosted parity | Public website and existing MCP use this canonical engine, provide a simple entry point plus advanced operations; authenticated or resource-bounded optimization; live endpoint tests, no customer data leakage |
 | Usability | Documented examples, versioned request/response schema, clear error states, inspectable schedules, exportable results and limitations |
 

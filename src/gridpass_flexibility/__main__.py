@@ -15,6 +15,7 @@ def main():
     mode.add_argument("--profile", action="store_const", const="profile", dest="operation", help="Evaluate supplied commitment profile and cases")
     mode.add_argument("--size", action="store_const", const="size", dest="operation", help="Optimize shared capacity across cases")
     mode.add_argument("--stress", action="store_const", const="stress", dest="operation", help="Generate annual commitment stress cases")
+    mode.add_argument("--causal", action="store_const", const="causal", dest="operation", help="Replay with only observed state and announced events")
     p.set_defaults(operation="screen")
     args = p.parse_args()
     if args.profile_schema:
