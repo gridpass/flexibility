@@ -24,3 +24,10 @@ class ReleaseProbeTests(unittest.TestCase):
         result['cases'][0]['alternatives'][0]['operating_years'][1]['annual_operating_cost_eur'] += 1
         with self.assertRaisesRegex(RuntimeError, 'recharge cost'):
             probe.assert_release_case('interyear', result)
+
+    def test_wrong_candidate_winner_is_rejected(self):
+        operation, payload = probe.release_cases()['capacity_candidates']
+        result = evaluate_request(operation, payload)
+        result['selected_candidate_id'] = 'large-work'
+        with self.assertRaisesRegex(RuntimeError, 'package acceptance'):
+            probe.assert_release_case('capacity_candidates', result)

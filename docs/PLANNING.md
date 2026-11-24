@@ -20,6 +20,48 @@ The LP minimizes investment plus weighted operation. A feasible solution is inde
 
 The analytical example has a 2 MW reduction in two alternative durations of two and three hours. Ideal-efficiency storage with sufficient recharge and no reserve needs 2 MW / 6 MWh to cover both. The three-hour case is zero-weight, so feasibility cannot be bought by ignoring an expensive stress case.
 
+## Finite equipment package selection
+
+Run `gridpass-flexibility --size examples/capacity-candidates.json` or use
+the same generic `size` operation. Supply optional `candidates` (1–16
+explicit packages), each with an ID, `allocated_cost_eur` and up to 16
+fixed cooling or flexible workload resources in the existing dispatch format.
+Supply `options: []` for package-only selection, or add continuous battery
+and generator options to optimize their shared capacity conditional on each
+package. An empty resources array can represent no additional flexible load.
+Candidate resource IDs may recur across packages but must be distinct from
+the continuous options and existing resources in each scenario. Case-specific
+`new_resource_availability` overrides apply to matching candidate resources
+or continuous options; a resource absent from a package has no effect.
+
+The existing hard-cap LP solves every package across all cases, including
+zero-weight cases. Each feasible design is independently replayed. The
+objective adds the explicit fixed allocated package cost to shared asset
+investment and weighted operating cost. Allocate fixed O&M and investment
+to the same horizon; the result's allocated capex field includes the supplied
+package allocation. Fuel or carbon costs can be included in variable cost;
+the separate lifecycle operation handles detailed NPV and connection timing.
+The result lists all candidate results and selects the minimum cost among
+the supplied feasible packages (lexical ID breaks an exact tie). Any failed
+solve or replay blocks the entire recommendation; proven hard-cap
+infeasibility excludes only that package. A single time budget covers all
+solves and replays. The hosted adapter charges work for every candidate.
+
+The synthetic example has a 2 MW cap reduction for one and two hours.
+A zone with 1 MWh/K capacitance and a 2 K allowed temperature rise can
+defer 2 MWh of cooling electricity at COP 1. It alone cannot pass the
+two-hour event. A 1 MW workload adds 2 MWh shift capacity. The combined
+package costs EUR 8,120 including weighted operation, versus EUR 8,200
+for a 2 MW workload-only package. The two cheaper packages are infeasible.
+No real site parameters are inferred.
+
+This is exhaustive comparison of a finite declared catalog, not a
+continuous optimum for cooling thermal parameters or workload capacities.
+It uses independent perfect-foresight operating scenarios and the existing
+linear dispatch model, not a robust causal policy. Discrete assets are
+rejected in this continuous planning operation; use fixed design dispatch
+for discrete unit commitment.
+
 ## Commitment evaluation
 
 Run:
@@ -37,5 +79,5 @@ A passing result refers only to the modeled test cases. Response times shorter t
 ## Open gaps
 
 - The separate sampled causal replay evaluates uncertain event timing and outages; continuous capacity sizing itself remains perfect-foresight.
-- Cooling and workload capacities are currently fixed inputs to dispatch and explicit design comparison, not continuous sizing options. Least-cost selection across hard-cap cases remains to be verified. Discrete generator start/run, forced-trip/restart replay and battery inverter modes are available in fixed-capacity dispatch.
+- Cooling and workload capacity selection uses finite supplied packages, not continuous thermal/workload optimization. Discrete generator start/run, forced-trip/restart replay and battery inverter modes are available in fixed-capacity dispatch.
 - Site-specific financial analysis, reliability probabilities, data-driven validation and field acceptance.

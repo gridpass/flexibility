@@ -1,0 +1,141 @@
+{
+  "cases": [
+    {
+      "id": "short",
+      "scenario": {
+        "interval_hours": 1,
+        "baseline_mw": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ],
+        "normal_import_cap_mw": 14,
+        "price_eur_mwh": 100,
+        "resources": [],
+        "events": [
+          {
+            "start": 2,
+            "end": 3,
+            "cap_mw": 8,
+            "notice_minutes": 60
+          }
+        ]
+      },
+      "weight": 1
+    },
+    {
+      "id": "long",
+      "scenario": {
+        "interval_hours": 1,
+        "baseline_mw": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ],
+        "normal_import_cap_mw": 14,
+        "price_eur_mwh": 100,
+        "resources": [],
+        "events": [
+          {
+            "start": 2,
+            "end": 4,
+            "cap_mw": 8,
+            "notice_minutes": 60
+          }
+        ]
+      },
+      "weight": 0
+    }
+  ],
+  "options": [],
+  "candidates": [
+    {
+      "id": "small-work",
+      "resources": [
+        {
+          "id": "work",
+          "kind": "workload",
+          "power_mw": 1,
+          "recovery_power_mw": 1,
+          "shift_budget_mwh": 2,
+          "max_delay_hours": 4
+        }
+      ],
+      "allocated_cost_eur": 50
+    },
+    {
+      "id": "cooling-only",
+      "resources": [
+        {
+          "id": "zone",
+          "kind": "thermal_cooling",
+          "power_mw": 4,
+          "thermal_capacitance_mwh_per_k": 1,
+          "thermal_conductance_mw_per_k": 0,
+          "min_temp_c": 20,
+          "max_temp_c": 22,
+          "initial_temp_c": 20,
+          "terminal_max_temp_c": 20,
+          "baseline_cooling_mw": 2,
+          "ambient_c": 20,
+          "heat_gain_mw": 2,
+          "cop": 1
+        }
+      ],
+      "allocated_cost_eur": 80
+    },
+    {
+      "id": "combined",
+      "resources": [
+        {
+          "id": "zone",
+          "kind": "thermal_cooling",
+          "power_mw": 4,
+          "thermal_capacitance_mwh_per_k": 1,
+          "thermal_conductance_mw_per_k": 0,
+          "min_temp_c": 20,
+          "max_temp_c": 22,
+          "initial_temp_c": 20,
+          "terminal_max_temp_c": 20,
+          "baseline_cooling_mw": 2,
+          "ambient_c": 20,
+          "heat_gain_mw": 2,
+          "cop": 1
+        },
+        {
+          "id": "work",
+          "kind": "workload",
+          "power_mw": 1,
+          "recovery_power_mw": 1,
+          "shift_budget_mwh": 2,
+          "max_delay_hours": 4
+        }
+      ],
+      "allocated_cost_eur": 120
+    },
+    {
+      "id": "large-work",
+      "resources": [
+        {
+          "id": "work",
+          "kind": "workload",
+          "power_mw": 2,
+          "recovery_power_mw": 2,
+          "shift_budget_mwh": 4,
+          "max_delay_hours": 4
+        }
+      ],
+      "allocated_cost_eur": 200
+    }
+  ]
+}
