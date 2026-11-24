@@ -95,3 +95,7 @@ Apache-2.0 for the original GridPass source in this repository. Third-party publ
 ## Lifecycle economics
 
 Compare full-year connection alternatives using the same dispatch model, real-EUR cashflows, capital and fixed costs, fuel, carbon, peak tariff and connection delays. Run `gridpass-flexibility --economics examples/lifecycle-economics.json` or use the generic MCP operation `economics`. See [assumptions and inputs](docs/ECONOMICS.md).
+
+## Measured validation
+
+See the [reproducible AAU measured trace benchmark](docs/MEASURED.md), including held-out prediction errors, dispatch balance checks and explicit limits on physical calibration.
