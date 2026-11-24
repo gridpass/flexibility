@@ -1,0 +1,1408 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:gridpass:flexibility:evaluation-response:v1",
+  "title": "GridPass evaluation response v1",
+  "description": "Operation-tagged validation view of the existing unwrapped result. Stable core fields are required; additive diagnostics are allowed.",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "screen"
+        },
+        "result": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "valid": {
+                  "const": false
+                },
+                "error": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "valid",
+                "error"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "object",
+              "properties": {
+                "valid": {
+                  "const": true
+                },
+                "feasible": {
+                  "type": "boolean"
+                },
+                "required": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "available": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "remaining": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "importMW": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "annualHours": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "annualUtilization": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "annualCost": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "dispatch": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "max": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "cost": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "power": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "mwh": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "eventCost": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "max",
+                      "cost",
+                      "power",
+                      "mwh",
+                      "eventCost"
+                    ],
+                    "additionalProperties": true
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "chargeTime": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "assumptions": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "valid",
+                "feasible",
+                "required",
+                "available",
+                "dispatch",
+                "remaining",
+                "importMW",
+                "annualHours",
+                "annualUtilization",
+                "annualCost",
+                "chargeTime",
+                "assumptions"
+              ],
+              "additionalProperties": true
+            }
+          ]
+        }
+      },
+      "required": [
+        "operation",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "dispatch"
+        },
+        "result": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "solved"
+                },
+                "feasible": {
+                  "type": "boolean"
+                },
+                "horizon_hours": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "uncovered_mwh": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "peak_uncovered_mw": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "operating_cost_eur": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "schedule": {
+                  "type": "object",
+                  "properties": {
+                    "grid_import_mw": {
+                      "type": "array",
+                      "items": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "minItems": 0
+                    },
+                    "import_cap_mw": {
+                      "type": "array",
+                      "items": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "minItems": 0
+                    },
+                    "uncovered_mw": {
+                      "type": "array",
+                      "items": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "minItems": 0
+                    },
+                    "resources": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "enum": [
+                              "generator",
+                              "battery",
+                              "renewable",
+                              "thermal_cooling",
+                              "workload",
+                              "cooling",
+                              "flexible_load"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "additionalProperties": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "grid_import_mw",
+                    "import_cap_mw",
+                    "uncovered_mw",
+                    "resources"
+                  ],
+                  "additionalProperties": false
+                },
+                "evidence": {
+                  "type": "object",
+                  "properties": {
+                    "engine_version": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "result_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "input_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "scenario_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    }
+                  },
+                  "required": [
+                    "engine_version",
+                    "result_sha256"
+                  ],
+                  "additionalProperties": true
+                },
+                "diagnostics": {
+                  "type": "object"
+                },
+                "events": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  },
+                  "minItems": 0
+                }
+              },
+              "required": [
+                "status",
+                "feasible",
+                "horizon_hours",
+                "uncovered_mwh",
+                "peak_uncovered_mw",
+                "operating_cost_eur",
+                "schedule",
+                "evidence",
+                "diagnostics",
+                "events"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "solver_failed"
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "solver_status": {
+                  "type": "integer"
+                },
+                "evidence": {
+                  "type": "object",
+                  "properties": {
+                    "engine_version": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "result_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "input_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "scenario_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    }
+                  },
+                  "required": [
+                    "engine_version"
+                  ],
+                  "additionalProperties": true
+                }
+              },
+              "required": [
+                "status",
+                "message",
+                "solver_status",
+                "evidence"
+              ],
+              "additionalProperties": true
+            }
+          ]
+        }
+      },
+      "required": [
+        "operation",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "compare_designs"
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "designs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "status": {
+                    "enum": [
+                      "solved",
+                      "solver_failed",
+                      "infeasible",
+                      "replay_failed",
+                      "evaluation_error"
+                    ]
+                  },
+                  "fixed_cost_eur": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "properties": {
+                      "engine_version": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "result_sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      "input_sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      "scenario_sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    },
+                    "required": [
+                      "engine_version"
+                    ],
+                    "additionalProperties": true
+                  },
+                  "feasible": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "id",
+                  "status",
+                  "fixed_cost_eur",
+                  "evidence"
+                ],
+                "additionalProperties": true
+              },
+              "minItems": 1
+            },
+            "recommended": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "cost_basis": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "designs",
+            "recommended",
+            "cost_basis"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "operation",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "profile"
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "profile_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "profile_version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "profile": {
+              "title": "GridPass independent commitment profile v1",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "version",
+                "reduction_mw",
+                "notice_minutes",
+                "activation_hours",
+                "annual_event_hours"
+              ],
+              "properties": {
+                "schema_version": {
+                  "const": "gridpass-profile-v1",
+                  "default": "gridpass-profile-v1"
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "version": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "reduction_mw": {
+                  "type": "number",
+                  "minimum": 1e-06,
+                  "maximum": 100000000
+                },
+                "notice_minutes": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 525600
+                },
+                "activation_hours": {
+                  "type": "number",
+                  "minimum": 0.0001,
+                  "maximum": 8760
+                },
+                "annual_event_hours": {
+                  "type": "number",
+                  "minimum": 0.0001,
+                  "maximum": 8760
+                },
+                "minimum_recovery_hours": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 8760
+                },
+                "maximum_interval_minutes": {
+                  "type": "number",
+                  "minimum": 0.016666666666666666,
+                  "maximum": 1440
+                }
+              }
+            },
+            "cases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "feasible": {
+                    "type": "boolean"
+                  },
+                  "status": {
+                    "enum": [
+                      "solved",
+                      "solver_failed",
+                      "infeasible",
+                      "replay_failed",
+                      "evaluation_error"
+                    ]
+                  },
+                  "complete_profile_coverage": {
+                    "type": "boolean"
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "properties": {
+                      "engine_version": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "result_sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      "input_sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      "scenario_sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    },
+                    "required": [
+                      "engine_version"
+                    ],
+                    "additionalProperties": true
+                  }
+                },
+                "required": [
+                  "feasible",
+                  "status",
+                  "complete_profile_coverage",
+                  "evidence"
+                ],
+                "additionalProperties": true
+              },
+              "minItems": 1
+            },
+            "coverage": {
+              "type": "object"
+            },
+            "result": {
+              "enum": [
+                "evaluation_error",
+                "modeled_cases_fail",
+                "modeled_cases_pass",
+                "incomplete_coverage"
+              ]
+            },
+            "evidence": {
+              "type": "object",
+              "properties": {
+                "profile_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "scenario_suite_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "result_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "required": [
+                "profile_schema_version",
+                "profile_sha256",
+                "scenario_suite_sha256",
+                "result_sha256"
+              ],
+              "additionalProperties": true
+            },
+            "limitations": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "profile_id",
+            "profile_version",
+            "profile",
+            "cases",
+            "coverage",
+            "result",
+            "evidence",
+            "limitations"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "operation",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "stress"
+        },
+        "result": {
+          "allOf": [
+            {
+              "type": "object",
+              "properties": {
+                "profile_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "profile_version": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "profile": {
+                  "title": "GridPass independent commitment profile v1",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "version",
+                    "reduction_mw",
+                    "notice_minutes",
+                    "activation_hours",
+                    "annual_event_hours"
+                  ],
+                  "properties": {
+                    "schema_version": {
+                      "const": "gridpass-profile-v1",
+                      "default": "gridpass-profile-v1"
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "version": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "reduction_mw": {
+                      "type": "number",
+                      "minimum": 1e-06,
+                      "maximum": 100000000
+                    },
+                    "notice_minutes": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 525600
+                    },
+                    "activation_hours": {
+                      "type": "number",
+                      "minimum": 0.0001,
+                      "maximum": 8760
+                    },
+                    "annual_event_hours": {
+                      "type": "number",
+                      "minimum": 0.0001,
+                      "maximum": 8760
+                    },
+                    "minimum_recovery_hours": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 8760
+                    },
+                    "maximum_interval_minutes": {
+                      "type": "number",
+                      "minimum": 0.016666666666666666,
+                      "maximum": 1440
+                    }
+                  }
+                },
+                "cases": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "feasible": {
+                        "type": "boolean"
+                      },
+                      "status": {
+                        "enum": [
+                          "solved",
+                          "solver_failed",
+                          "infeasible",
+                          "replay_failed",
+                          "evaluation_error"
+                        ]
+                      },
+                      "complete_profile_coverage": {
+                        "type": "boolean"
+                      },
+                      "evidence": {
+                        "type": "object",
+                        "properties": {
+                          "engine_version": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "result_sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          },
+                          "input_sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          },
+                          "scenario_sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        },
+                        "required": [
+                          "engine_version"
+                        ],
+                        "additionalProperties": true
+                      }
+                    },
+                    "required": [
+                      "feasible",
+                      "status",
+                      "complete_profile_coverage",
+                      "evidence"
+                    ],
+                    "additionalProperties": true
+                  },
+                  "minItems": 1
+                },
+                "coverage": {
+                  "type": "object"
+                },
+                "result": {
+                  "enum": [
+                    "evaluation_error",
+                    "modeled_cases_fail",
+                    "modeled_cases_pass",
+                    "incomplete_coverage"
+                  ]
+                },
+                "evidence": {
+                  "type": "object",
+                  "properties": {
+                    "profile_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "scenario_suite_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "result_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    }
+                  },
+                  "required": [
+                    "profile_schema_version",
+                    "profile_sha256",
+                    "scenario_suite_sha256",
+                    "result_sha256"
+                  ],
+                  "additionalProperties": true
+                },
+                "limitations": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "profile_id",
+                "profile_version",
+                "profile",
+                "cases",
+                "coverage",
+                "result",
+                "evidence",
+                "limitations"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "object",
+              "properties": {
+                "suite": {
+                  "type": "object",
+                  "properties": {
+                    "version": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "outage_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "minItems": 0
+                    },
+                    "description": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "version",
+                    "outage_ids",
+                    "description"
+                  ],
+                  "additionalProperties": true
+                }
+              },
+              "required": [
+                "suite"
+              ],
+              "additionalProperties": true
+            }
+          ]
+        }
+      },
+      "required": [
+        "operation",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "size"
+        },
+        "result": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "enum": [
+                    "infeasible",
+                    "solver_failed"
+                  ]
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "evidence": {
+                  "type": "object",
+                  "properties": {
+                    "engine_version": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "result_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "input_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "scenario_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    }
+                  },
+                  "required": [
+                    "engine_version"
+                  ],
+                  "additionalProperties": true
+                }
+              },
+              "required": [
+                "status",
+                "message",
+                "evidence"
+              ],
+              "additionalProperties": true
+            },
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "enum": [
+                    "solved",
+                    "replay_failed"
+                  ]
+                },
+                "capacities": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "power_mw": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "energy_mwh": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "power_mw"
+                    ],
+                    "additionalProperties": true
+                  }
+                },
+                "allocated_capex_eur": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "weighted_operating_cost_eur": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "total_cost_eur": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "optimizer_objective_eur": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "cases": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "status": {
+                        "enum": [
+                          "solved",
+                          "solver_failed",
+                          "infeasible",
+                          "replay_failed",
+                          "evaluation_error"
+                        ]
+                      },
+                      "feasible": {
+                        "type": "boolean"
+                      },
+                      "evidence": {
+                        "type": "object",
+                        "properties": {
+                          "engine_version": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "result_sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          },
+                          "input_sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          },
+                          "scenario_sha256": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        },
+                        "required": [
+                          "engine_version"
+                        ],
+                        "additionalProperties": true
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "status",
+                      "feasible",
+                      "evidence"
+                    ],
+                    "additionalProperties": true
+                  },
+                  "minItems": 1
+                },
+                "all_cases_feasible": {
+                  "type": "boolean"
+                },
+                "evidence": {
+                  "type": "object",
+                  "properties": {
+                    "engine_version": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "result_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "input_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "scenario_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    }
+                  },
+                  "required": [
+                    "engine_version",
+                    "result_sha256"
+                  ],
+                  "additionalProperties": true
+                },
+                "limitations": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "status",
+                "capacities",
+                "allocated_capex_eur",
+                "weighted_operating_cost_eur",
+                "total_cost_eur",
+                "optimizer_objective_eur",
+                "cases",
+                "all_cases_feasible",
+                "evidence",
+                "limitations"
+              ],
+              "additionalProperties": true
+            }
+          ]
+        }
+      },
+      "required": [
+        "operation",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "causal"
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "enum": [
+                "solved",
+                "replay_failed"
+              ]
+            },
+            "feasible": {
+              "type": "boolean"
+            },
+            "horizon_hours": {
+              "type": "number",
+              "minimum": 0
+            },
+            "uncovered_mwh": {
+              "type": "number",
+              "minimum": 0
+            },
+            "peak_uncovered_mw": {
+              "type": "number",
+              "minimum": 0
+            },
+            "operating_cost_eur": {
+              "type": "number",
+              "minimum": 0
+            },
+            "schedule": {
+              "type": "object",
+              "properties": {
+                "grid_import_mw": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "minItems": 0
+                },
+                "import_cap_mw": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "minItems": 0
+                },
+                "uncovered_mw": {
+                  "type": "array",
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "minItems": 0
+                },
+                "resources": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "generator",
+                          "battery",
+                          "renewable",
+                          "thermal_cooling",
+                          "workload",
+                          "cooling",
+                          "flexible_load"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              },
+              "required": [
+                "grid_import_mw",
+                "import_cap_mw",
+                "uncovered_mw",
+                "resources"
+              ],
+              "additionalProperties": false
+            },
+            "evidence": {
+              "type": "object",
+              "properties": {
+                "engine_version": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "result_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "input_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "scenario_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "required": [
+                "engine_version",
+                "result_sha256"
+              ],
+              "additionalProperties": true
+            },
+            "executed_intervals": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 35040
+            },
+            "terminal_state": {
+              "type": "object"
+            },
+            "missed_deadline_mwh": {
+              "type": "number",
+              "minimum": 0
+            },
+            "fallbacks": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              },
+              "minItems": 0
+            },
+            "limitations": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "status",
+            "feasible",
+            "horizon_hours",
+            "uncovered_mwh",
+            "peak_uncovered_mw",
+            "operating_cost_eur",
+            "schedule",
+            "evidence",
+            "executed_intervals",
+            "terminal_state",
+            "missed_deadline_mwh",
+            "fallbacks",
+            "limitations"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "operation",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "const": "economics"
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "enum": [
+                "solved",
+                "evaluation_error"
+              ]
+            },
+            "years": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "real_discount_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "reference_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "cases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "comparison_complete": {
+                    "type": "boolean"
+                  },
+                  "recommended": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "alternatives": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "annual": {
+                          "type": "object",
+                          "properties": {
+                            "dispatch_status": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "feasible": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "dispatch_status",
+                            "feasible"
+                          ],
+                          "additionalProperties": true
+                        },
+                        "eligible": {
+                          "type": "boolean"
+                        },
+                        "incremental_npv_eur": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "annual",
+                        "eligible",
+                        "incremental_npv_eur"
+                      ],
+                      "additionalProperties": true
+                    },
+                    "minItems": 1
+                  }
+                },
+                "required": [
+                  "id",
+                  "comparison_complete",
+                  "recommended",
+                  "alternatives"
+                ],
+                "additionalProperties": true
+              },
+              "minItems": 1
+            },
+            "evidence": {
+              "type": "object",
+              "properties": {
+                "engine_version": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "result_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "input_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "scenario_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "required": [
+                "engine_version",
+                "result_sha256"
+              ],
+              "additionalProperties": true
+            },
+            "limitations": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "status",
+            "years",
+            "real_discount_rate",
+            "reference_id",
+            "cases",
+            "evidence",
+            "limitations"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "operation",
+        "result"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

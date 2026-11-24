@@ -12,6 +12,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from gridpass_flexibility.interface import evaluate_request
+from gridpass_flexibility.interface_schema import validate_evaluation
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 CASES = {
@@ -83,6 +84,7 @@ def main():
         cases.update(release_cases())
     for name, (op, payload) in cases.items():
         # Compare JSON values, not Python-only container types (e.g. tariff tuples).
+        validate_evaluation("request", op, payload)
         expected = json.loads(json.dumps(evaluate_request(op, payload), allow_nan=False))
         if name == "commissioning":
             row = expected["cases"][0]["alternatives"][0]
@@ -96,6 +98,8 @@ def main():
             raise RuntimeError(f"{op}: browser HTTP {status}, error={browser.get('error')}")
         response = rpc("tools/call", {"name": "evaluate_flexibility", "arguments": envelope})
         actual = json.loads(response["content"][0]["text"])
+        for result in (expected, browser, actual):
+            validate_evaluation("response", op, result)
         if browser != expected or actual != expected:
             raise RuntimeError(f"{name}: numerical or evidence parity failed (check engine/solver versions)")
         print(f"{name}: exact browser/MCP/local parity", flush=True)

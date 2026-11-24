@@ -9,6 +9,7 @@ def main():
     p.add_argument("scenario", nargs="?", type=Path)
     p.add_argument("--schema", action="store_true")
     p.add_argument("--profile-schema", action="store_true", help="Print independent commitment profile JSON Schema")
+    p.add_argument("--evaluation-schema", choices=["request", "response"], help="Print the versioned canonical evaluation JSON Schema")
     mode=p.add_mutually_exclusive_group()
     mode.add_argument("--dispatch", action="store_const", const="dispatch", dest="operation", help="Chronological optimization")
     mode.add_argument("--compare-designs", action="store_const", const="compare_designs", dest="operation", help="Compare explicit equipment designs")
@@ -19,6 +20,10 @@ def main():
     mode.add_argument("--economics", action="store_const", const="economics", dest="operation", help="Compare lifecycle costs and connection delays")
     p.set_defaults(operation="screen")
     args = p.parse_args()
+    if args.evaluation_schema:
+        from .interface_schema import evaluation_schema
+        print(json.dumps(evaluation_schema(args.evaluation_schema), indent=2))
+        return 0
     if args.profile_schema:
         from .profiles import profile_schema
         print(json.dumps(profile_schema(), indent=2))
