@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from time import monotonic
-from math import isclose
+from math import isclose, ceil
 from . import __version__
 from .dispatch import evaluate, _number, _series, _digest
 
@@ -105,6 +105,52 @@ def _commissioning_slice(scenario, start, dt):
                 spec[key]=spec[key][start:]
     return scenario
 
+def _repeat_boundary(scenario, schedule):
+    """Conservative certificate for replaying a solved trace from declared state.
+
+    Battery and thermal state must match, and generator transition must be
+    valid for the next annual plan's declared initial state. Fuel is assumed
+    replenished at the boundary, as in the annual accounting model.
+    """
+    dt = scenario["interval_hours"]
+    checks = []
+    for spec in scenario.get("resources", []):
+        name = spec["id"]
+        trace = schedule["resources"][name]
+        def check(field, actual, expected):
+            checks.append({"resource": name, "state": field, "end": actual,
+                           "required_start": expected,
+                           "pass": isclose(actual, expected, rel_tol=0, abs_tol=1e-5)})
+        if spec["kind"] == "battery":
+            check("soc_mwh", trace["soc_mwh"][-1], spec.get("initial_mwh", spec["energy_mwh"]))
+        elif spec["kind"] == "thermal_cooling":
+            check("temperature_c", trace["temperature_c"][-1], spec["initial_temp_c"])
+        elif spec["kind"] == "generator":
+            check("generation_mw", trace["generation_mw"][-1], spec.get("initial_mw", 0))
+            if "online" in trace:
+                initial_on = spec.get("initial_on", spec.get("initial_mw", 0) > 0)
+                last_on = trace["online"][-1] > .5
+                check("online", int(last_on), int(initial_on))
+                samples = 0
+                for online in reversed(trace["online"]):
+                    if (online > .5) != last_on:
+                        break
+                    samples += 1
+                duration = samples * dt
+                if samples == len(trace["online"]) and last_on == initial_on:
+                    duration += spec.get("initial_state_hours", 8760)
+                minimum = spec.get("minimum_up_hours" if initial_on else "minimum_down_hours", 0)
+                # Compare remaining interval-rounded dwell obligations, not ages.
+                remaining = ceil(max(0, minimum-duration)/dt-1e-9)
+                allowed = ceil(max(0, minimum-spec.get("initial_state_hours", 8760))/dt-1e-9)
+                checks.append({"resource":name,"state":"dwell_intervals_remaining",
+                               "end":remaining,"maximum_start":allowed,"pass":remaining<=allowed})
+        elif "backlog_mwh" in trace:
+            check("backlog_mwh", trace["backlog_mwh"][-1], 0)
+    return {"pass": all(c["pass"] for c in checks), "checks": checks,
+            "method": "declared_state_match", "fuel_assumption": "replenished_each_year"}
+
+
 def _annual(a, modifiers, deadline, start_month=0):
     scenario=deepcopy(a["scenario"])
     n=len(scenario["baseline_mw"]);dt=_number(scenario["interval_hours"],"interval hours",1/3600,24)
@@ -149,6 +195,7 @@ def _annual(a, modifiers, deadline, start_month=0):
     if solved["status"]!="solved":
         result["message"]=solved["message"]
         return result
+    result["repeat_boundary"]=_repeat_boundary(scenario,solved["schedule"])
     grid=solved["schedule"]["grid_import_mw"]
     grid_cost=sum(p*g*dt for p,g in zip(energy_price,grid))
     grid_emissions=sum(ef*g*dt for ef,g in zip(grid_ef,grid))/1000
@@ -240,7 +287,17 @@ def compare_lifecycle(payload):
                         continue
                     finance=_cashflows(annual["annual_operating_cost_eur"],a,years,discount,case["capex_multiplier"],case["extra_delay_months"],annual.get("monthly_operating_cost_eur"),partial["annual_operating_cost_eur"])
                 row["finance"]=finance
-                row["eligible"]=annual["feasible"] and finance["discounted_service_years"]>0 and (partial is None or partial["feasible"])
+                active_years=sum(f["service_fraction"]>0 for f in finance["cashflows"])
+                # Nonseasonal partial years are explicitly a prorated annual proxy.
+                # Seasonal commissioning has a separate trace and boundary.
+                repeat_required=active_years>(2 if partial is not None else 1)
+                commissioning_required=partial is not None and active_years>1
+                row["boundary_validation"]={
+                    "annual_required":repeat_required,
+                    "commissioning_required":commissioning_required,
+                    "pass": (not repeat_required or annual["repeat_boundary"]["pass"]) and
+                            (not commissioning_required or partial["repeat_boundary"]["pass"])}
+                row["eligible"]=annual["feasible"] and finance["discounted_service_years"]>0 and (partial is None or partial["feasible"]) and row["boundary_validation"]["pass"]
             else:
                 # Validate financial inputs even if the solver fails.
                 _cashflows(0,a,years,discount,case["capex_multiplier"],case["extra_delay_months"])
@@ -251,7 +308,9 @@ def compare_lifecycle(payload):
             row["incremental_npv_eur"]=(row["finance"]["npv_eur"]-reference_row["finance"]["npv_eur"]
                                          if row["eligible"] and reference_row["eligible"] else None)
         ranked=sorted((r for r in rows if r["eligible"]),key=lambda r:(-r["finance"]["npv_eur"],r["id"]))
-        complete=all(r["annual"]["dispatch_status"]=="solved" and r.get("commissioning",{}).get("dispatch_status","solved")=="solved" for r in rows)
+        complete=all(r["annual"]["dispatch_status"]=="solved" and r.get("commissioning",{}).get("dispatch_status","solved")=="solved"
+                     and (not r["annual"]["feasible"] or not r.get("commissioning",{}).get("feasible",True)
+                          or r.get("boundary_validation",{}).get("pass",True)) for r in rows)
         results.append({"id":case["id"],"assumptions":case,"alternatives":rows,
                         "comparison_complete":complete,"recommended":ranked[0]["id"] if complete and ranked else None})
     result={"status":"solved" if all(c["comparison_complete"] for c in results) else "evaluation_error",
@@ -262,6 +321,7 @@ def compare_lifecycle(payload):
         result["limitations"]=result["limitations"].replace("Annual peak tariff is a single site maximum, not monthly demand billing.", "Monthly peak tariff uses sampled maxima in a non-leap Jan–Dec year.")
     if any(a.get("seasonal_commissioning",False) for a in alternatives):
         result["limitations"]=result["limitations"].replace("fractional service years prorate all annual costs and contribution, including peak tariff.", "nonseasonal alternatives prorate all annual costs and contribution, including peak tariff.")
-        result["limitations"]+=" Seasonal alternatives assume January project start and independently redispatch the first partial year from the declared scenario initial conditions and zero workload backlog, without pre-service notice or energy. Full years repeat the annual schedule; continuity between years, pre-service commissioning energy and actual plant state are not validated. Generator fuel budget is the declared available amount per solve. Contribution and fixed costs remain prorated."
+        result["limitations"]+=" Seasonal alternatives assume January project start and independently redispatch the first partial year from the declared scenario initial conditions and zero workload backlog, without pre-service notice or energy. Full years repeat the annual schedule; pre-service commissioning energy and actual plant state are not validated. Generator fuel budget is the declared available amount per solve. Contribution and fixed costs remain prorated."
+    result["limitations"]+=" Repeated-year and commissioning-to-full-year recommendations require conservative declared-state matching (absolute tolerance 1e-5) for storage, thermal state, generator output/commitment/dwell and workload backlog. A mismatch is not proof no continuous schedule exists; no inter-year reoptimization is attempted. Fuel replenishment is assumed at year boundaries."
     result["evidence"]["result_sha256"]=_digest(result)
     return result
