@@ -65,6 +65,7 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False, *, causal_stat
     bounds=[]; operating=[]; sizing={}; integer=[]
     expansion=expansion or {}
     recovery_columns=[]
+    fallback_backlog_columns=[]
     causal_state=causal_state or {}
     eq_r=[];eq_c=[];eq_v=[];eq_b=[]
     ub_r=[];ub_c=[];ub_v=[];ub_b=[]
@@ -256,7 +257,9 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False, *, causal_stat
             delay=max(1,math.floor(max_delay/dt+EPS))
             initial_queue=causal_state.get("backlogs",{}).get(name,[])
             initial_backlog=sum(amount for _,amount in initial_queue)
-            shed=series(0,[min(available[t],demand[t]) if event_at[t] else 0 for t in range(n)],cost*dt)
+            fallback=causal_state.get("recovery_fallback",False)
+            if fallback and n!=1:raise ValueError("Recovery fallback requires one interval")
+            shed=series(0,[min(available[t],demand[t]) if event_at[t] and not fallback else 0 for t in range(n)],cost*dt)
             restore=series(0,[recover*availability[t] if event_at[t] is None else 0 for t in range(n)],[EPS*dt]*n)
             backlog=[variable(0,backlog_cap) for _ in range(n)]
             # Cumulative deferrals/recovery make the deadline constraints O(n).
@@ -271,10 +274,11 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False, *, causal_stat
                     if t:terms.append((cumulative[t-1],-1))
                     constraint(terms,0,True)
                 due=sum(amount for deadline,amount in initial_queue if deadline<=t)
-                if t>=delay or due:
+                if not fallback and (t>=delay or due):
                     constraint(([(deferred[t-delay],1)] if t>=delay else [])+[(recovered[t],-1)],-due)
                 balance[t]+=[(shed[t],1),(restore[t],-1)]
-            constraint([(backlog[-1],1)],0,True)
+            if fallback:fallback_backlog_columns.append(backlog[-1])
+            else:constraint([(backlog[-1],1)],0,True)
             resources.append((name,kind,{"shift_mw":shed,"recovery_mw":restore,"backlog_mwh":backlog}))
         else:raise ValueError(f"Unsupported resource kind {kind}")
     # No combination may defer more than the underlying total load.
@@ -288,7 +292,7 @@ def _build_model(scenario: dict, expansion=None, hard_caps=False, *, causal_stat
     return {"bounds":bounds,"operating":np.asarray(operating),"A_ub":matrix(ub_r,ub_c,ub_v,ub_b),
             "b_ub":np.asarray(ub_b),"A_eq":matrix(eq_r,eq_c,eq_v,eq_b),"b_eq":np.asarray(eq_b),
             "grid":grid,"gap":gap,"caps":caps,"dt":dt,"n":n,"demand":demand,"prices":prices,
-            "events":events,"resources":resources,"sizing":sizing,"integrality":np.asarray(integer),"recovery_columns":recovery_columns}
+            "events":events,"resources":resources,"sizing":sizing,"integrality":np.asarray(integer),"recovery_columns":recovery_columns,"fallback_backlog_columns":fallback_backlog_columns}
 
 def evaluate(scenario: dict, *, _causal_state=None, _deadline=None, _peak_import_cost=0) -> dict:
     """Minimize import-cap violations, then operating cost at that minimum."""
@@ -335,6 +339,11 @@ def evaluate(scenario: dict, *, _causal_state=None, _deadline=None, _peak_import
     priority=np.zeros(len(bounds));priority[gap]=1
     first=limit(gap,[1]*n,priority)
     if not first.success:return failed(first)
+    if m["fallback_backlog_columns"]:
+        cols=m["fallback_backlog_columns"]
+        priority=np.zeros(len(bounds));priority[cols]=1
+        recovered=limit(cols,[1]*len(cols),priority)
+        if not recovered.success:return failed(recovered)
     if m["recovery_columns"]:
         cols=m["recovery_columns"]
         recovery=np.zeros(len(bounds));recovery[cols]=1

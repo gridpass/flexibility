@@ -1,4 +1,4 @@
-# Causal operating replay (v0.3.3)
+# Causal operating replay (v0.3.8)
 
 The chronological planner knows the complete supplied scenario. A feasible
 planning schedule is not proof that a site can respond to an unexpected
@@ -65,10 +65,17 @@ sample and execution of the calculated interval-average action.
   as FIFO entries with their original deadlines. Recovery does not reset
   deadlines at each solve. The existing energy-equivalent resource model
   requires the forecast window to recover its backlog. If the forecast
-  becomes infeasible (for example, an unexpected loss of recovery capacity),
-  replay stops and reports the last executed state and failure; it does not
-  claim that a future deadline was actually missed. Thermal and workload
-  calibration, soft deadline violations and safe fallback control remain open.
+  becomes infeasible, the solver may retry a single observed interval if
+  workload resources exist. The fallback disables new deferrals and relaxes
+  only workload deadline and terminal-backlog equality constraints. It retains
+  all physical constraints and first minimizes the current import-cap gap,
+  then outstanding deferred MWh, other recovery deficits and cost. FIFO work
+  remains due at its original deadline; each newly missed MWh is counted once
+  and remains outstanding until actually recovered. Normal forecast planning
+  resumes on the next sample. Timeouts and other solver failures are not
+  retried. If the fallback itself fails, the replay stops without inventing
+  an action. This is a simulated degraded workload policy, not a plant
+  fail-safe or an operator-approved fallback.
 
 The example has an unexpected trip of a 2 MW generator during a 2 MW reduction
 commitment. The generator remains offline for two intervals due to its minimum
@@ -86,7 +93,12 @@ resource schedules, import caps, gap MW/MWh, realized operating cost,
 forced trips, terminal state, recovery shortfalls, executed interval count,
 policy identifier, input/output SHA-256 and engine version. `status=solved`
 means the complete sampled replay ran; `feasible=true` additionally requires
-no cap gap above tolerance and no outstanding terminal recovery obligations.
+no cap gap above tolerance, no outstanding terminal recovery obligations,
+no missed workload deadlines, and no invocation of the degraded fallback.
+A complete degraded replay reports `status=solved` but is non-passing even
+if late work is ultimately recovered. `fallbacks` records each attempt,
+`missed_deadlines` records newly overdue MWh per resource and interval, and
+`missed_deadline_mwh` is their sum (not a time integral of backlog).
 `status=replay_failed` means a solve, forecast feasibility or time budget
 failed and only the prefix is evidence. It cannot pass. A negative result
 for this policy is not a proof that all other causal policies fail.
