@@ -9,6 +9,7 @@ import json
 import math
 from copy import deepcopy
 from . import __version__
+from .validation import checked_solution
 
 MAX_INTERVALS = 35_040
 EPS = 1e-7
@@ -321,11 +322,13 @@ def evaluate(scenario: dict, *, _causal_state=None, _deadline=None, _peak_import
 
         if m["integrality"].any():
             lo,hi=zip(*bounds)
-            return milp(objective,integrality=m["integrality"],
+            sol = milp(objective,integrality=m["integrality"],
                         bounds=Bounds(lo,[np.inf if v is None else v for v in hi]),
                         constraints=[LinearConstraint(A_ub,-np.inf,b_ub),LinearConstraint(m["A_eq"],m["b_eq"],m["b_eq"])],
                         options={"time_limit":remaining,"mip_rel_gap":0})
-        return linprog(objective,A_ub=A_ub,b_ub=b_ub,A_eq=m["A_eq"],b_eq=m["b_eq"],bounds=bounds,method="highs",options={"time_limit":remaining})
+        else:
+            sol = linprog(objective,A_ub=A_ub,b_ub=b_ub,A_eq=m["A_eq"],b_eq=m["b_eq"],bounds=bounds,method="highs",options={"time_limit":remaining})
+        return checked_solution(sol,bounds,m["A_eq"],m["b_eq"],A_ub,b_ub,m["integrality"])
     evidence={"engine_version":__version__,"solver":"scipy.optimize.milp/HiGHS" if m["integrality"].any() else "scipy.optimize.linprog/HiGHS","scipy_version":scipy.__version__,
               "scenario_sha256":_digest(scenario),"evidence_type":"modelled_perfect_foresight" if _causal_state is None else "observed_state_forecast_plan"}
     if _peak_import_cost:evidence["peak_import_cost_eur_mw"]=_peak_import_cost

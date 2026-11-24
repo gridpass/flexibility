@@ -105,6 +105,11 @@ Goal: an independently usable open-source large-load flexibility assessment work
 
 - Pinned CC BY 4.0 ELF trace: 3,322 samples, six downward A10G cap steps across two workloads. Observed post-cap-label settling ranges from 101 to 1,893 ms, with final-window iteration latency reported and incomplete steps censored. Regression tests reject nonmonotonic/gapped and nonfinite measurements. See [benchmark](MEASURED.md). Command invocation latency, facility power, workload SLA and site response remain external evidence; no engine defaults changed.
 
+## Verified independent numerical solution checks and one-second sampled response
+
+- Each successful LP/MILP dispatch stage (including lexicographic objective-lock rows) and the shared capacity LP is checked against the original sparse equality/inequality matrices, variable bounds and integer constraints. Nonfinite or malformed vectors and residuals above an absolute 1e-5 in native row units return solver failure, not infeasibility or a recommendation. This is a numerical threshold, not a contractual meter tolerance or proof of optimality.
+- Fault-injected solver success with an invalid point is rejected in both dispatch and sizing. A six-second synthetic dispatch with two seconds of response delay and 0.5 MW/s generator ramp produces per-event-sample gaps of 1, 1, 0.5 and 0 MW; independent integration gives 2.5 MW-s (0.00069444 MWh). This checks modeled one-second behavior, not subinterval or physical equipment response.
+
 ## Remaining release gates
 
 | Gate | Acceptance evidence |
@@ -113,7 +118,7 @@ Goal: an independently usable open-source large-load flexibility assessment work
 | Operational feasibility | Sampled causal replay, discrete dispatch, forced-trip/restart and state carryover implemented; sampled degraded workload recovery implemented; remaining plant-specific fallback control, calibrated plant response, finer response checks and independent field validation |
 | Resource models | Temperature-constrained cooling, protected loads and renewable curtailment implemented; remaining calibrated thermal and workload parameters and real measured traces with clear reuse permissions |
 | Economics | Common real-EUR NPV, investment/fixed costs, replacement, fuel, emissions, annual or calendar-month peak tariffs, connection-delay value and reoptimized sensitivity implemented and analytically checked; remaining real-site assumptions, utility-specific tariff rules, inter-year reoptimization for nonmatching states (conservative boundary check implemented), real commissioning-state inputs, causal evidence |
-| Validation | Closed-form and synthetic full-year 15-minute cases implemented; a small exhaustive commitment cost cross-check is implemented; sampled failure injection and prefix invariance now tested; first normalized measured trace replay and repeatable benchmark artifact implemented; physical-unit measured demand replay implemented; remaining finer numerical tolerance, actuator/thermal calibration and independent field response evidence |
+| Validation | Closed-form and synthetic full-year 15-minute cases implemented; a small exhaustive commitment cost cross-check is implemented; sampled failure injection and prefix invariance now tested; first normalized measured trace replay and repeatable benchmark artifact implemented; physical-unit measured demand replay implemented; independent native-unit numerical residual checks and one-second synthetic response implemented; remaining physical actuator/thermal calibration and independent field response evidence |
 | Hosted parity | Initial dedicated authenticated deployment and all eight operation browser/MCP/local parity verified; local busy/timeout tests pass. Production sustained-load, availability monitoring and external security review remain separate operational validation |
 | Usability | Documented examples, versioned request/response schema, clear error states, inspectable schedules, exportable results and limitations |
 
