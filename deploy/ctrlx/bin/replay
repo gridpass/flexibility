@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+: "${SNAP:?run via snap}"
+export PYTHONPATH="$SNAP/vendor:$SNAP/src"
+export PYTHONDONTWRITEBYTECODE=1
+exec /usr/bin/python3 -m gridpass_flexibility.guard_demo "$SNAP/examples/guard-site.json"

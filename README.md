@@ -83,7 +83,7 @@ See [research and implementation scope](docs/RESEARCH.md) and [model details](do
 
 ## Secure grid connections (proposal)
 
-See the [GridPass Guard specification and release gates](docs/SECURE_GRID_CONNECTIONS.md) for the proposed independent site-side enforcement and evidence layer. The current evaluator remains an offline planning tool; no live-control or certification claim is made. Run the [simulator-only Guard reference demo](docs/GUARD_DEMO.md) to reproduce authorization, fallback, and measurement-failure tests.
+See the [GridPass Guard specification and release gates](docs/SECURE_GRID_CONNECTIONS.md) for the proposed independent site-side enforcement and evidence layer. The current evaluator remains an offline planning tool; no live-control or certification claim is made. Run the [simulator-only Guard reference demo](docs/GUARD_DEMO.md) to reproduce authorization, fallback, and measurement-failure tests. Build and run the [Bosch Rexroth ctrlX COREvirtual developer SNAP](docs/CTRLX_GUARD.md) using the same open-source implementation.
 
 ## GridPass services
 
