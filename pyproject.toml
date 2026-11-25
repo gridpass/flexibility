@@ -27,8 +27,10 @@ gridpass-flexibility = "gridpass_flexibility.__main__:main"
 gridpass-flexibility-mcp = "gridpass_flexibility.mcp_server:main"
 gridpass-flexibility-http = "gridpass_flexibility.http_service:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools]
+packages = ["gridpass_flexibility", "gridpass_flexibility.examples"]
+package-dir = {"" = "src", "gridpass_flexibility.examples" = "examples"}
 
 [tool.setuptools.package-data]
 gridpass_flexibility = ["schemas/*.json"]
+"gridpass_flexibility.examples" = ["*.json"]

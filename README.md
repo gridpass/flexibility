@@ -66,6 +66,12 @@ gridpass-flexibility-mcp
 
 The default transport is stdio. The read-only `evaluate_flexibility` tool accepts an operation (`screen`, `dispatch`, `compare_designs`, `profile`, `size`, `stress`, `causal`, or `economics`) and the corresponding example JSON payload. For a local HTTP client, run `gridpass-flexibility-mcp --transport streamable-http` and connect to `http://127.0.0.1:8765/mcp`. See [agent integration](docs/MCP.md).
 
+Use it to assess whether a site's load and equipment can meet a proposed grid
+import limit. Agents can discover the existing input/output schemas and synthetic
+examples through MCP resources, or start with the `assess_connection` prompt.
+Run `python scripts/demo_connection_assessment.py` after installing the agent
+extra to reproduce a complete equipment comparison through MCP.
+
 ## Screening model scope
 
 - Site power gap in MW and energy demand in MWh per restriction.
