@@ -13,6 +13,9 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: pip install ".[agent,guard,host]"
       - run: python -m unittest discover -s tests -v
+      - name: Run the installed MCP connection assessment
+        working-directory: ${{ runner.temp }}
+        run: python "$GITHUB_WORKSPACE/scripts/demo_connection_assessment.py" > connection-assessment.json
       - run: gridpass-flexibility examples/data-centre.json
       - run: gridpass-flexibility --dispatch examples/chronological.json
       - run: gridpass-flexibility --dispatch examples/discrete-dispatch.json
